@@ -86,6 +86,26 @@ Public traffic flow:
 - `/api/v1/*` -> backend
 - `telegram-bot` has no public port and works as an internal worker
 
+## Render Deploy
+
+This repository is also prepared for `Render Blueprint` deploys with:
+
+- [render.yaml](/c:/Users/nurmi/OneDrive/Desktop/decentrathon/insightu-frontend/render.yaml)
+
+Render service layout:
+
+- `insightu-frontend` as a web service
+- `insightu-backend` as a web service
+- `insightu-telegram-bot` as a background worker
+
+Important Render notes:
+
+- `NEXT_PUBLIC_API_BASE_URL` must be set manually to the public URL of `insightu-backend`
+- `CORS_ORIGINS` must include the public URL of `insightu-frontend`
+- `BOT_TOKEN`, `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` are secret env vars and must be added manually in Render
+- Render Blueprints support `web` and `worker` services via `render.yaml`  
+  Source: [Render Blueprint YAML Reference](https://render.com/docs/blueprint-spec)
+
 ## Notes
 
 - Without external keys and backend URLs the app falls back to mock data automatically.

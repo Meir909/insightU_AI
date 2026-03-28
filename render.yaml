@@ -1,0 +1,66 @@
+services:
+  - name: insightu-backend
+    type: web
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: API_HOST
+        value: 0.0.0.0
+      - key: API_PORT
+        value: "8000"
+      - key: OPENAI_MODEL
+        value: gpt-4o
+      - key: SUPABASE_CANDIDATES_TABLE
+        value: candidates
+      - key: SUPABASE_APPLICATIONS_TABLE
+        value: applications
+      - key: ALLOW_MOCK_STORAGE
+        value: "false"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+
+  - name: insightu-frontend
+    type: web
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    dockerfilePath: ./Dockerfile.frontend
+    dockerContext: .
+    envVars:
+      - key: NEXT_PUBLIC_WS_URL
+        value: ""
+      - key: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: NEXT_PUBLIC_API_BASE_URL
+        sync: false
+
+  - name: insightu-telegram-bot
+    type: worker
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    dockerfilePath: ./telegram-bot/Dockerfile
+    dockerContext: ./telegram-bot
+    envVars:
+      - key: OPENAI_FEEDBACK_ENABLED
+        value: "true"
+      - key: SESSION_TIMEOUT_HOURS
+        value: "24"
+      - key: BACKEND_BASE_URL
+        value: http://insightu-backend:8000
+      - key: BOT_TOKEN
+        sync: false
