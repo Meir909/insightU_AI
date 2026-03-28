@@ -2,6 +2,7 @@
 
 import { Bell, Search, Sparkles } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { SessionControls } from "@/components/auth/session-controls";
 
 const titles: Record<string, string> = {
   "/dashboard": "Панель отбора",
@@ -18,7 +19,7 @@ export function TopBar() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-text-muted">
-            inDrive × inVision U
+            inDrive x inVision U
           </p>
           <h1 className="mt-1 text-2xl font-black tracking-tight text-white">{title}</h1>
         </div>
@@ -35,6 +36,7 @@ export function TopBar() {
             <Sparkles className="h-4 w-4" />
             Live scoring
           </div>
+          <SessionControls compact />
         </div>
       </div>
     </div>

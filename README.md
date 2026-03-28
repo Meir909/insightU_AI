@@ -54,12 +54,13 @@ cp .env.example .env.local
 Variables:
 
 - `NEXT_PUBLIC_API_BASE_URL` for optional external ranking source
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` for auth
+- `COMMITTEE_ACCESS_KEY` for protected commission access
 - `OPENAI_API_KEY` for adaptive interviewer behavior
 
 ## Notes
 
 - Telegram bot was removed in favor of an in-app chat agent.
+- Clerk was removed in favor of built-in local auth with candidate and committee flows.
 - Interview sessions are stored in server runtime memory.
 - Without `OPENAI_API_KEY`, the interviewer uses a deterministic fallback question strategy.
 - Dashboard fallback data remains intact, so the admin UI does not break.

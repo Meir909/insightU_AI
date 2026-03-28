@@ -1,12 +1,11 @@
 "use client";
 
 import { BotMessageSquare, ShieldCheck, Sparkles } from "lucide-react";
+import { SessionControls } from "@/components/auth/session-controls";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { InputBox } from "@/components/chat/input-box";
 import { ScorePill } from "@/components/chat/score-pill";
-import { ClerkGuard } from "@/components/sign-in/clerk-guard";
 import { useChat } from "@/hooks/use-chat";
-import { envFlags } from "@/lib/env";
 
 function InterviewClient() {
   const { messages, input, setInput, sendMessage, loading, progress, status, scoreUpdate, phase } =
@@ -19,12 +18,15 @@ function InterviewClient() {
           <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-text-muted">
             Candidate Interview
           </p>
-          <h1 className="mt-2 text-4xl font-black tracking-[-0.04em] text-white">
-            Web Chat Agent for inVision U
-          </h1>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+            <h1 className="text-4xl font-black tracking-[-0.04em] text-white">
+              Web Chat Agent for inVision U
+            </h1>
+            <SessionControls compact />
+          </div>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-text-secondary">
-            Этот AI interviewer собирает ответы кандидата, обновляет промежуточную оценку и передаёт её комиссии.
-            Итоговое решение не объявляется кандидату автоматически.
+            Этот AI interviewer собирает ответы кандидата, обновляет промежуточную оценку и передаёт её комиссии. Итоговое решение не
+            объявляется кандидату автоматически.
           </p>
         </div>
 
@@ -36,12 +38,10 @@ function InterviewClient() {
         <div className="flex items-center justify-between rounded-[28px] border border-white/6 bg-bg-surface p-4">
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-text-muted">Candidate session</p>
-            <p className="mt-1 text-sm font-semibold text-white">
-              {envFlags.clerk ? "Authenticated interview" : "Session interview"}
-            </p>
+            <p className="mt-1 text-sm font-semibold text-white">Protected interview session</p>
           </div>
           <span className="rounded-full border border-brand-green/20 bg-brand-green/10 px-3 py-1 text-[11px] font-semibold text-brand-green">
-            {envFlags.clerk ? "Clerk" : "Local session"}
+            Local auth
           </span>
         </div>
 
@@ -113,9 +113,7 @@ function InterviewClient() {
 export default function InterviewPage() {
   return (
     <div className="dot-grid min-h-screen bg-bg-base px-4 py-10 lg:px-8">
-      <ClerkGuard enabled={envFlags.clerk}>
-        <InterviewClient />
-      </ClerkGuard>
+      <InterviewClient />
     </div>
   );
 }

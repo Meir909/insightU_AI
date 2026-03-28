@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { BarChart3, ChevronRight, LayoutDashboard, Star, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SessionControls } from "@/components/auth/session-controls";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -24,12 +25,12 @@ export function Sidebar() {
           </div>
           <div>
             <p className="text-sm font-black tracking-tight">InsightU AI</p>
-            <p className="text-[11px] text-text-muted">inVision U · Admin</p>
+            <p className="text-[11px] text-text-muted">inVision U • Admin</p>
           </div>
         </div>
       </div>
 
-      <div className="px-5 pt-5 pb-2">
+      <div className="px-5 pb-2 pt-5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-text-muted">
           Навигация
         </p>
@@ -70,15 +71,7 @@ export function Sidebar() {
       </div>
 
       <div className="border-t border-white/6 px-4 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-brand-green/20 bg-brand-green/8 font-mono text-sm font-bold text-brand-green">
-            CM
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-white">Комиссия</p>
-            <p className="text-[11px] text-text-muted">review@invisionu.kz</p>
-          </div>
-        </div>
+        <SessionControls />
       </div>
     </aside>
   );

@@ -1,19 +1,14 @@
 "use client";
 
-import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "react-hot-toast";
 import type { ReactNode } from "react";
 
 type AppProvidersProps = {
   children: ReactNode;
-  clerkPublishableKey?: string;
 };
 
-export function AppProviders({
-  children,
-  clerkPublishableKey,
-}: AppProvidersProps) {
-  const content = (
+export function AppProviders({ children }: AppProvidersProps) {
+  return (
     <>
       {children}
       <Toaster
@@ -27,15 +22,5 @@ export function AppProviders({
         }}
       />
     </>
-  );
-
-  if (!clerkPublishableKey) {
-    return content;
-  }
-
-  return (
-    <ClerkProvider publishableKey={clerkPublishableKey}>
-      {content}
-    </ClerkProvider>
   );
 }

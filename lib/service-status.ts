@@ -11,9 +11,9 @@ export function getServiceStatus(): ServiceState[] {
   return [
     {
       key: "auth",
-      label: "Clerk Auth",
-      configured: envFlags.clerk,
-      detail: envFlags.clerk ? "Publishable + secret key present" : "Missing Clerk keys",
+      label: "Built-in Auth",
+      configured: true,
+      detail: envFlags.committeeAccessKey ? "Committee access key configured" : "Using default committee-demo key",
     },
     {
       key: "dashboard",

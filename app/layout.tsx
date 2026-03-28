@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/app-providers";
-import { env } from "@/lib/env";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -27,9 +26,7 @@ export default function RootLayout({
   return (
     <html lang="ru" className={`${inter.variable} ${jetBrainsMono.variable}`}>
       <body>
-        <AppProviders clerkPublishableKey={env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
-          {children}
-        </AppProviders>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

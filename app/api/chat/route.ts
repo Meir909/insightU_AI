@@ -1,6 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { getAuthSession } from "@/lib/server/auth";
 import { appendUserMessage, getOrCreateSession } from "@/lib/server/interview-store";
 import { getServiceLabel } from "@/lib/server/interviewer";
 
@@ -10,8 +10,8 @@ const postSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
+  const sessionAuth = getAuthSession(request);
+  if (!sessionAuth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "session_id is required" }, { status: 400 });
   }
 
-  const session = await getOrCreateSession(sessionId, userId);
+  const session = await getOrCreateSession(sessionId, sessionAuth.sessionId);
   return NextResponse.json({
     messages: session.messages,
     progress: session.progress,
@@ -32,13 +32,13 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
+  const sessionAuth = getAuthSession(request);
+  if (!sessionAuth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const payload = postSchema.parse(await request.json());
-  const result = await appendUserMessage(payload.session_id, userId, payload.message);
+  const result = await appendUserMessage(payload.session_id, sessionAuth.sessionId, payload.message);
   return NextResponse.json({
     reply: result.reply,
     progress: result.progress,
