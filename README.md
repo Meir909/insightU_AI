@@ -29,7 +29,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3001`.
 
 ## Validation
 
@@ -55,7 +55,38 @@ Important variables:
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` for auth
 - `OPENAI_API_KEY`, `POSTGRES_URL`, `REDIS_URL`, `FAISS_API_URL`, `S3_BUCKET_URL` for backend service readiness
 
+## Single Server Deploy
+
+This repository is now prepared for a single-server deployment where one VPS or cloud server runs:
+
+- `frontend` as a `Next.js` service
+- `backend` as a `FastAPI` service
+- `telegram-bot` as a worker service
+- `nginx` as the public reverse proxy
+
+Deployment files:
+
+- [docker-compose.yml](/c:/Users/nurmi/OneDrive/Desktop/decentrathon/insightu-frontend/docker-compose.yml)
+- [Dockerfile.frontend](/c:/Users/nurmi/OneDrive/Desktop/decentrathon/insightu-frontend/Dockerfile.frontend)
+- [backend/Dockerfile](/c:/Users/nurmi/OneDrive/Desktop/decentrathon/insightu-frontend/backend/Dockerfile)
+- [telegram-bot/Dockerfile](/c:/Users/nurmi/OneDrive/Desktop/decentrathon/insightu-frontend/telegram-bot/Dockerfile)
+- [deploy/nginx.conf](/c:/Users/nurmi/OneDrive/Desktop/decentrathon/insightu-frontend/deploy/nginx.conf)
+- [.env.server.example](/c:/Users/nurmi/OneDrive/Desktop/decentrathon/insightu-frontend/.env.server.example)
+
+Run on server:
+
+```bash
+cp .env.server.example .env
+docker compose up -d --build
+```
+
+Public traffic flow:
+
+- `/` -> frontend
+- `/api/v1/*` -> backend
+- `telegram-bot` has no public port and works as an internal worker
+
 ## Notes
 
 - Without external keys and backend URLs the app falls back to mock data automatically.
-- `middleware.ts`, `ClerkProvider`, `service-status` API and data client are already wired for real integrations.
+- `proxy.ts`, `ClerkProvider`, `service-status` API and data client are already wired for real integrations.
