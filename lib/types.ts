@@ -30,3 +30,25 @@ export interface Candidate {
   motivation_text: string;
   essay_excerpt: string;
 }
+
+export type ChatRole = "assistant" | "user";
+
+export interface ChatMessage {
+  id: string;
+  role: ChatRole;
+  content: string;
+  createdAt: string;
+}
+
+export interface InterviewScoreUpdate {
+  cognitive: number;
+  leadership: number;
+  growth: number;
+  decision: number;
+  motivation: number;
+  authenticity: number;
+  final_score: number;
+  confidence: number;
+  ai_detection_prob: number;
+  needs_manual_review: boolean;
+}

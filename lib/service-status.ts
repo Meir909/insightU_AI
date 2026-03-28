@@ -16,16 +16,10 @@ export function getServiceStatus(): ServiceState[] {
       detail: envFlags.clerk ? "Publishable + secret key present" : "Missing Clerk keys",
     },
     {
-      key: "api",
-      label: "FastAPI",
+      key: "dashboard",
+      label: "Dashboard Data Layer",
       configured: envFlags.api,
-      detail: env.NEXT_PUBLIC_API_BASE_URL || "Missing NEXT_PUBLIC_API_BASE_URL",
-    },
-    {
-      key: "realtime",
-      label: "WebSocket",
-      configured: envFlags.realtime,
-      detail: env.NEXT_PUBLIC_WS_URL || "Missing NEXT_PUBLIC_WS_URL",
+      detail: env.NEXT_PUBLIC_API_BASE_URL || "Using mock ranking fallback",
     },
     {
       key: "llm",
@@ -34,28 +28,10 @@ export function getServiceStatus(): ServiceState[] {
       detail: envFlags.openai ? "OPENAI_API_KEY present" : "Missing OPENAI_API_KEY",
     },
     {
-      key: "postgres",
-      label: "PostgreSQL",
-      configured: envFlags.postgres,
-      detail: envFlags.postgres ? "POSTGRES_URL present" : "Missing POSTGRES_URL",
-    },
-    {
-      key: "redis",
-      label: "Redis Cache",
-      configured: envFlags.redis,
-      detail: envFlags.redis ? "REDIS_URL present" : "Missing REDIS_URL",
-    },
-    {
-      key: "faiss",
-      label: "FAISS / Vector DB",
-      configured: envFlags.faiss,
-      detail: env.FAISS_API_URL || "Missing FAISS_API_URL",
-    },
-    {
-      key: "storage",
-      label: "S3 Storage",
-      configured: envFlags.s3,
-      detail: env.S3_BUCKET_URL || "Missing S3_BUCKET_URL",
+      key: "chat",
+      label: "Web Chat Agent",
+      configured: true,
+      detail: "Session-based interviewer is available via /api/chat",
     },
   ];
 }

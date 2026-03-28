@@ -67,13 +67,22 @@ export default function SignInPage() {
 
           <div className="mt-6 space-y-3">
             {!envFlags.clerk ? (
-              <Link
-                href="/dashboard"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-brand-green/40 bg-brand-green px-6 py-3 text-base font-semibold text-black transition-all duration-200 hover:bg-brand-dim hover:shadow-green"
-              >
-                <ArrowRight className="h-4 w-4" />
-                Открыть dashboard
-              </Link>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Link
+                  href="/dashboard"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-brand-green/40 bg-brand-green px-6 py-3 text-base font-semibold text-black transition-all duration-200 hover:bg-brand-dim hover:shadow-green"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Открыть dashboard
+                </Link>
+                <Link
+                  href="/interview"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/8 px-6 py-3 text-base font-semibold text-text-secondary transition-all duration-200 hover:border-brand-green/20 hover:text-white"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Open web interview
+                </Link>
+              </div>
             ) : null}
             <p className="text-xs leading-relaxed text-text-muted">
               При наличии `Clerk` ключей и backend URL фронтенд начнёт использовать реальные сервисы
