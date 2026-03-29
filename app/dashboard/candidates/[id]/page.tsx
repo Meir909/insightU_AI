@@ -1,4 +1,4 @@
-import { Flag, ShieldCheck, Star } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AIDetectionBadge } from "@/components/dashboard/ai-detection-badge";
@@ -7,7 +7,6 @@ import { ConfidenceRing } from "@/components/dashboard/confidence-ring";
 import { ExplainabilityBlock } from "@/components/dashboard/explainability-block";
 import { ScoreRadar } from "@/components/dashboard/score-radar";
 import { ScoreSpherePanel } from "@/components/dashboard/score-sphere-panel";
-import { GreenButton } from "@/components/ui/green-button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getCandidate, getRanking } from "@/lib/api";
 
@@ -39,7 +38,7 @@ export default async function CandidatePage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-4">
         <div className="space-y-3">
           <Link href="/dashboard" className="text-sm text-text-secondary transition-colors hover:text-white">
             ← Назад к пулу кандидатов
@@ -48,16 +47,7 @@ export default async function CandidatePage({
             <h2 className="text-3xl font-black tracking-tight text-white">{candidate.code}</h2>
             <StatusBadge status={candidate.status} />
           </div>
-          <p className="text-sm text-text-secondary">
-            {candidate.city} • {candidate.program} • anonymized profile {candidate.name}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <GreenButton icon={<Star className="h-4 w-4" />}>В shortlist</GreenButton>
-          <GreenButton variant="danger" icon={<Flag className="h-4 w-4" />}>
-            Ручной флаг
-          </GreenButton>
+          <p className="text-sm text-text-secondary">{candidate.city} • {candidate.program} • anonymized profile</p>
         </div>
       </div>
 
@@ -86,7 +76,7 @@ export default async function CandidatePage({
               <ExplainabilityBlock scores={scores} reasoning={candidate.reasoning} keyQuotes={candidate.key_quotes} />
 
               <div className="panel-soft p-5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Explainability 2.0</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Explainability</p>
                 <h3 className="mt-2 text-xl font-black tracking-tight text-white">{candidate.explainability_v2?.verdict}</h3>
                 <p className="mt-3 text-sm leading-relaxed text-text-secondary">{candidate.explainability_v2?.plainLanguage}</p>
                 <div className="mt-5 grid gap-3">
@@ -94,9 +84,6 @@ export default async function CandidatePage({
                     <div key={item.title} className="panel-muted p-4">
                       <p className="text-sm font-semibold text-white">{item.title}</p>
                       <p className="mt-2 text-sm leading-relaxed text-text-secondary">{item.summary}</p>
-                      <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-text-muted">
-                        Supports: {item.supports.join(", ")}
-                      </p>
                     </div>
                   ))}
                 </div>
@@ -132,7 +119,7 @@ export default async function CandidatePage({
             </div>
 
             <div className="panel-soft p-5">
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Artifacts and models</p>
+              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Supporting evidence</p>
               <div className="space-y-3">
                 {candidate.artifacts?.slice(0, 3).map((artifact) => (
                   <div key={artifact.id} className="panel-muted p-4">
@@ -141,15 +128,6 @@ export default async function CandidatePage({
                       <span className="font-mono text-xs text-brand-green">{artifact.kind}</span>
                     </div>
                     <p className="mt-2 text-sm leading-relaxed text-text-secondary">{artifact.extractedSignals.join(" • ")}</p>
-                  </div>
-                ))}
-                {candidate.ensemble?.slice(0, 2).map((model) => (
-                  <div key={model.model} className="panel-muted p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-white">{model.model}</p>
-                      <span className="font-mono text-sm font-bold text-brand-green">{model.score}</span>
-                    </div>
-                    <p className="mt-2 text-sm leading-relaxed text-text-secondary">{model.rationale}</p>
                   </div>
                 ))}
               </div>

@@ -1,6 +1,5 @@
 "use client";
 
-import { ShieldCheck, Sparkles } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { SessionControls } from "@/components/auth/session-controls";
 
@@ -22,17 +21,7 @@ export function TopBar() {
           <h1 className="mt-1 text-2xl font-black tracking-tight text-white">{title}</h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-brand-green/15 bg-brand-green/8 px-4 py-2 text-xs text-brand-green">
-            <Sparkles className="h-3.5 w-3.5" />
-            Live scoring enabled
-          </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-4 py-2 text-xs text-text-secondary">
-            <ShieldCheck className="h-3.5 w-3.5 text-brand-green" />
-            Human review required
-          </div>
-          <SessionControls compact />
-        </div>
+        <SessionControls compact />
       </div>
     </div>
   );

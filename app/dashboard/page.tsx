@@ -1,15 +1,11 @@
 import { AlertTriangle, Star, TrendingUp, Users } from "lucide-react";
-import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { CandidateTable } from "@/components/dashboard/candidate-table";
 import { CompliancePanel } from "@/components/dashboard/compliance-panel";
 import { KPICard } from "@/components/dashboard/kpi-card";
-import { ServiceStatusPanel } from "@/components/dashboard/service-status-panel";
 import { getRanking } from "@/lib/api";
-import { getServiceStatus } from "@/lib/service-status";
 
 export default async function DashboardPage() {
   const candidates = await getRanking();
-  const services = getServiceStatus();
   const avgScore = candidates.reduce((sum, candidate) => sum + candidate.final_score, 0) / Math.max(candidates.length, 1);
   const shortlisted = candidates.filter((candidate) => candidate.status === "shortlisted").length;
   const flagged = candidates.filter((candidate) => candidate.needs_manual_review).length;
@@ -22,12 +18,9 @@ export default async function DashboardPage() {
           <div>
             <h2 className="text-3xl font-black tracking-tight text-white">Комиссионная панель отбора</h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">
-              Здесь комиссия видит общий пул кандидатов, промежуточные сигналы модели и коллективный review flow без
-              одиночного принятия решений.
+              Комиссия видит общий пул кандидатов, аргументированную оценку модели и принимает итоговое решение без
+              лишнего визуального шума.
             </p>
-          </div>
-          <div className="inline-flex items-center rounded-full border border-brand-green/15 bg-brand-green/8 px-4 py-2 text-xs font-semibold text-brand-green">
-            Live evaluation workspace
           </div>
         </div>
       </section>
@@ -50,8 +43,6 @@ export default async function DashboardPage() {
 
         <div className="space-y-4">
           <CompliancePanel />
-          <ServiceStatusPanel services={services} />
-          <ActivityFeed />
         </div>
       </section>
     </div>
