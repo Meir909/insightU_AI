@@ -2,7 +2,7 @@
 
 import { BarChart3, LayoutDashboard, LogOut, Star } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -13,6 +13,13 @@ const navItems = [
 
 export function MobileNav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const logout = async () => {
+    await fetch("/api/auth/session", { method: "DELETE" });
+    router.push("/sign-in");
+    router.refresh();
+  };
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/6 bg-bg-surface/95 px-2 py-2 backdrop-blur-md lg:hidden">
@@ -25,10 +32,8 @@ export function MobileNav() {
               key={href}
               href={href}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition-colors",
-                active
-                  ? "bg-brand-green text-black"
-                  : "text-text-secondary hover:bg-white/4 hover:text-white",
+                "flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-green/35 active:scale-[0.98]",
+                active ? "bg-brand-green text-black" : "text-text-secondary hover:bg-white/4 hover:text-white",
               )}
             >
               <Icon className="h-4 w-4" />
@@ -37,13 +42,14 @@ export function MobileNav() {
           );
         })}
 
-        <Link
-          href="/sign-in"
-          className="flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium text-text-secondary transition-colors hover:bg-white/4 hover:text-white"
+        <button
+          type="button"
+          onClick={logout}
+          className="flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium text-text-secondary transition-all duration-150 hover:bg-white/4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-green/35 active:scale-[0.98]"
         >
           <LogOut className="h-4 w-4" />
           <span>Выход</span>
-        </Link>
+        </button>
       </div>
     </div>
   );

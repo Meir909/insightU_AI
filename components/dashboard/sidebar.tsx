@@ -44,7 +44,7 @@ export function Sidebar() {
                 whileHover={{ x: 2 }}
                 transition={{ duration: 0.12 }}
                 className={cn(
-                  "flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150",
+                  "flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-green/35 active:scale-[0.98]",
                   active ? "bg-brand-green text-black" : "text-text-secondary hover:bg-white/4 hover:text-white",
                 )}
               >
