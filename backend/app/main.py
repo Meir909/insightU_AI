@@ -8,6 +8,7 @@ from app.api.routes.committee import router as committee_router
 from app.api.routes.health import router as health_router
 from app.api.routes.interviews import router as interviews_router
 from app.api.routes.uploads import router as uploads_router
+from app.ai.router import ai_router
 from app.config import get_settings
 
 settings = get_settings()
@@ -33,3 +34,4 @@ app.include_router(interviews_router)
 app.include_router(uploads_router)
 app.include_router(committee_router)
 app.include_router(analytics_router)
+app.include_router(ai_router)
