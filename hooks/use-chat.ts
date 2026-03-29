@@ -29,6 +29,10 @@ export function useChat() {
     void fetch(`/api/chat?session_id=${sessionIdRef.current}`)
       .then((response) => response.json())
       .then((data) => {
+        if (data.session_id) {
+          sessionIdRef.current = data.session_id as string;
+          window.sessionStorage.setItem("insightu-chat-session", data.session_id as string);
+        }
         setMessages(data.messages ?? []);
         setProgress(data.progress ?? 12);
         setStatus(data.status ?? "active");
@@ -99,6 +103,10 @@ export function useChat() {
     });
 
     const data = await response.json();
+    if (data.session_id) {
+      sessionIdRef.current = data.session_id as string;
+      window.sessionStorage.setItem("insightu-chat-session", data.session_id as string);
+    }
     setMessages(data.messages ?? []);
     setProgress(data.progress ?? progress);
     setStatus(data.status ?? "active");

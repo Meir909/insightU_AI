@@ -33,9 +33,22 @@ class VoteRequest(BaseModel):
     rationale: str = Field(min_length=10, max_length=600)
 
 
+class AttachmentPayload(BaseModel):
+    id: str = Field(min_length=1)
+    kind: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    mime_type: str = Field(min_length=1)
+    size_kb: int = Field(ge=0)
+    status: str = Field(min_length=1)
+    transcript: str | None = None
+    extracted_signals: list[str] = Field(default_factory=list)
+    storage_path: str | None = None
+
+
 class MessageRequest(BaseModel):
     session_id: str = Field(min_length=1)
     message: str = Field(min_length=1)
+    attachments: list[AttachmentPayload] = Field(default_factory=list)
 
 
 class SessionCreateRequest(BaseModel):

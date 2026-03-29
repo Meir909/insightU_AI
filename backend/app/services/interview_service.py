@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from fastapi import HTTPException, status
 
-from app.models import ChatMessage, ScoreSnapshot
+from app.models import ChatAttachment, ChatMessage, ScoreSnapshot
 from app.security import now_utc
 from app.services.repository import get_store
 
@@ -29,28 +29,54 @@ def _score(messages_count: int) -> ScoreSnapshot:
     )
 
 
-def append_message(account_id: str, session_id: str, message: str):
+def append_message(account_id: str, session_id: str, message: str, attachments: list | None = None):
     store = get_store()
 
     def mutate(state):
-        session = next((item for item in state.interview_sessions if item.id == session_id and item.account_id == account_id), None)
+        session = next(
+            (item for item in state.interview_sessions if item.id == session_id and item.account_id == account_id),
+            None,
+        )
         if not session:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview session not found")
 
         timestamp = now_utc()
+        message_attachments = [
+            ChatAttachment(
+                id=item.id,
+                kind=item.kind,
+                name=item.name,
+                mime_type=item.mime_type,
+                size_kb=item.size_kb,
+                status=item.status,
+                transcript=item.transcript,
+                extracted_signals=item.extracted_signals,
+                storage_path=item.storage_path,
+            )
+            for item in (attachments or [])
+        ]
+
         session.messages.append(
             ChatMessage(
                 id=f"msg-{uuid4().hex[:10]}",
                 role="user",
                 content=message,
                 created_at=timestamp,
+                attachments=message_attachments,
             )
         )
+
+        if message_attachments:
+            existing_ids = {item.id for item in session.artifacts}
+            for attachment in message_attachments:
+                if attachment.id not in existing_ids:
+                    session.artifacts.append(attachment)
+
         session.messages.append(
             ChatMessage(
                 id=f"msg-{uuid4().hex[:10]}",
                 role="assistant",
-                content="Спасибо. Ответ сохранён, а профиль кандидата обновлён для комиссии.",
+                content="Спасибо. Ответ и вложения сохранены, а профиль кандидата обновлён для комиссии.",
                 created_at=timestamp,
             )
         )
@@ -68,5 +94,5 @@ def get_session(account_id: str):
     state = get_store().load()
     session = next((item for item in state.interview_sessions if item.account_id == account_id), None)
     if not session:
-      raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview session not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview session not found")
     return session

@@ -14,5 +14,5 @@ def my_interview_route(account=Depends(require_account)):
 
 @router.post("/message")
 def interview_message_route(payload: MessageRequest, account=Depends(require_account)):
-    session = append_message(account.id, payload.session_id, payload.message)
+    session = append_message(account.id, payload.session_id, payload.message, payload.attachments)
     return {"session": session}
