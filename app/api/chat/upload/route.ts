@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/server/auth";
 import { processUpload } from "@/lib/server/multimodal";
+import { persistUploadedArtifactMeta } from "@/lib/server/persistent-store";
 
 export async function POST(request: NextRequest) {
   const session = getAuthSession(request);
@@ -16,5 +17,6 @@ export async function POST(request: NextRequest) {
   }
 
   const attachment = await processUpload(file);
+  await persistUploadedArtifactMeta(attachment);
   return NextResponse.json({ attachment });
 }

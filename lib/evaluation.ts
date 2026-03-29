@@ -70,12 +70,7 @@ const buildEnsemble = (candidate: Candidate): ModelContribution[] => [
   },
 ];
 
-const vote = (
-  candidate: Candidate,
-  memberId: string,
-  memberName: string,
-  bias: number,
-): CommitteeVote => {
+const vote = (candidate: Candidate, memberId: string, memberName: string, bias: number): CommitteeVote => {
   const weighted = candidate.final_score + bias - candidate.ai_detection_prob * 12;
 
   let decision: CommitteeVote["decision"] = "hold";
@@ -108,33 +103,29 @@ const buildCommitteeReview = (candidate: Candidate): CommitteeReview => {
   const holdCount = votes.filter((item) => item.decision === "hold").length;
 
   let finalDecision: CommitteeReview["finalDecision"] = "pending";
-  if (approvedCount >= 2) finalDecision = "approved";
-  else if (rejectCount >= 2) finalDecision = "rejected";
-  else if (holdCount > 0 || approvedCount === 1) finalDecision = "escalated";
+  if (approvedCount >= 3) finalDecision = "approved";
+  else if (rejectCount >= 3) finalDecision = "rejected";
+  else if (holdCount > 0 || approvedCount > 0 || rejectCount > 0) finalDecision = "escalated";
 
   return {
-    requiredApprovals: 2,
+    requiredApprovals: 3,
     votes,
     approvedCount,
     rejectCount,
     holdCount,
     finalDecision,
     corruptionGuard:
-      "Кандидат не может быть принят единственным голосом. Для положительного решения требуется минимум 2 независимых одобрения комиссии.",
+      "Кандидат не может быть принят единственным голосом. Для положительного решения требуется минимум 3 независимых одобрения комиссии.",
   };
 };
 
 export function enrichCandidate(candidate: Candidate): Candidate {
-  const artifacts = buildArtifacts(candidate);
-  const ensemble = buildEnsemble(candidate);
-  const committeeReview = buildCommitteeReview(candidate);
-
-  return {
-    ...candidate,
-    artifacts,
-    ensemble,
-    committee_review: committeeReview,
-    explainability_v2: {
+  const artifacts = candidate.artifacts ?? buildArtifacts(candidate);
+  const ensemble = candidate.ensemble ?? buildEnsemble(candidate);
+  const committeeReview = candidate.committee_review ?? buildCommitteeReview(candidate);
+  const explainability =
+    candidate.explainability_v2 ??
+    {
       verdict:
         committeeReview.finalDecision === "approved"
           ? "AI recommends approval, but only because the case is supported by multiple evidence channels and committee consensus."
@@ -144,21 +135,9 @@ export function enrichCandidate(candidate: Candidate): Candidate {
       plainLanguage:
         "Система объясняет оценку через конкретные наблюдения: что кандидат сказал, как это подтверждается в артефактах и какие модели внесли вклад в итоговую рекомендацию.",
       evidence: [
-        {
-          title: "Leadership evidence",
-          summary: candidate.reasoning,
-          supports: ["leadership", "growth"],
-        },
-        {
-          title: "Candidate quotes",
-          summary: candidate.key_quotes[0] || candidate.essay_excerpt,
-          supports: ["motivation", "authenticity"],
-        },
-        {
-          title: "Scenario response trace",
-          summary: candidate.key_quotes[1] || candidate.goals,
-          supports: ["decision", "cognitive"],
-        },
+        { title: "Leadership evidence", summary: candidate.reasoning, supports: ["leadership", "growth"] },
+        { title: "Candidate quotes", summary: candidate.key_quotes[0] || candidate.essay_excerpt, supports: ["motivation", "authenticity"] },
+        { title: "Scenario response trace", summary: candidate.key_quotes[1] || candidate.goals, supports: ["decision", "cognitive"] },
       ],
       modelContributions: ensemble,
       fairnessNotes: [
@@ -166,6 +145,13 @@ export function enrichCandidate(candidate: Candidate): Candidate {
         "Any low-confidence or high AI-risk case is automatically escalated to human review.",
         committeeReview.corruptionGuard,
       ],
-    },
+    };
+
+  return {
+    ...candidate,
+    artifacts,
+    ensemble,
+    committee_review: committeeReview,
+    explainability_v2: explainability,
   };
 }

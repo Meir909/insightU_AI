@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { saveUploadedBinary } from "@/lib/server/persistent-store";
 import type { ChatAttachment } from "@/lib/types";
 
 const kb = (size: number) => Math.max(1, Math.round(size / 1024));
@@ -14,6 +15,8 @@ export async function processUpload(file: File): Promise<ChatAttachment> {
   const mimeType = file.type || "application/octet-stream";
   const kind = inferKind(mimeType);
   const name = file.name || `${kind}-artifact`;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const storagePath = await saveUploadedBinary(name, bytes, mimeType);
 
   let transcript = "";
   if (mimeType.startsWith("text/")) {
@@ -42,5 +45,6 @@ export async function processUpload(file: File): Promise<ChatAttachment> {
     status: "ready",
     transcript,
     extractedSignals,
+    storagePath,
   };
 }

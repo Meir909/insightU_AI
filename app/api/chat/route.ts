@@ -13,6 +13,7 @@ const attachmentSchema = z.object({
   status: z.enum(["uploaded", "processing", "ready"]),
   transcript: z.string().optional(),
   extractedSignals: z.array(z.string()).optional(),
+  storagePath: z.string().optional(),
 });
 
 const postSchema = z.object({
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "session_id is required" }, { status: 400 });
   }
 
-  const session = await getOrCreateSession(sessionId, sessionAuth.sessionId);
+  const session = await getOrCreateSession(sessionId, sessionAuth.sessionId, sessionAuth.name);
   return NextResponse.json({
     messages: session.messages,
     progress: session.progress,
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
   const result = await appendUserMessage(
     payload.session_id,
     sessionAuth.sessionId,
+    sessionAuth.name,
     payload.message,
     payload.attachments ?? [],
   );

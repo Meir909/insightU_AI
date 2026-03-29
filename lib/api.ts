@@ -1,6 +1,8 @@
+import "server-only";
 import { env } from "@/lib/env";
 import { enrichCandidate } from "@/lib/evaluation";
 import { MOCK_CANDIDATES } from "@/lib/mock-data";
+import { getPersistedCandidate, getPersistedCandidates, getPersistedShortlist } from "@/lib/server/persistent-store";
 import type { Candidate } from "@/lib/types";
 
 type FairnessSummary = {
@@ -48,6 +50,13 @@ async function fetchJson<T>(path: string): Promise<T | null> {
   }
 }
 
+async function getLocalRanking(): Promise<Candidate[]> {
+  const candidates = await getPersistedCandidates();
+  if (candidates.length > 0) return candidates;
+
+  return MOCK_CANDIDATES.map(enrichCandidate);
+}
+
 export async function getRanking(): Promise<Candidate[]> {
   const data = await fetchJson<unknown>("/api/v1/ranking");
   if (Array.isArray(data)) {
@@ -64,7 +73,7 @@ export async function getRanking(): Promise<Candidate[]> {
     if (normalized.length > 0) return normalized;
   }
 
-  return MOCK_CANDIDATES.map(enrichCandidate);
+  return getLocalRanking();
 }
 
 export async function getCandidate(id: string): Promise<Candidate | null> {
@@ -74,6 +83,9 @@ export async function getCandidate(id: string): Promise<Candidate | null> {
     const normalized = normalizeCandidate(data as Partial<Candidate>);
     if (normalized) return normalized;
   }
+
+  const candidate = await getPersistedCandidate(id);
+  if (candidate) return candidate;
 
   const fallback = MOCK_CANDIDATES.find((candidate) => candidate.id === id) ?? null;
   return fallback ? enrichCandidate(fallback) : null;
@@ -88,6 +100,9 @@ export async function getShortlist(): Promise<Candidate[]> {
       .filter(Boolean) as Candidate[];
     if (normalized.length > 0) return normalized;
   }
+
+  const shortlist = await getPersistedShortlist();
+  if (shortlist.length > 0) return shortlist;
 
   return MOCK_CANDIDATES.filter((candidate) => candidate.status === "shortlisted").map(enrichCandidate);
 }
@@ -104,15 +119,15 @@ export async function getFairnessSummary(): Promise<FairnessSummary> {
     return { fairnessScore, avgConfidence, manualReviewRate };
   }
 
-  const candidates = MOCK_CANDIDATES.map(enrichCandidate);
+  const candidates = await getRanking();
 
   return {
     fairnessScore: 0.86,
     avgConfidence: Math.round(
-      (candidates.reduce((sum, candidate) => sum + candidate.confidence, 0) / candidates.length) * 100,
+      (candidates.reduce((sum, candidate) => sum + candidate.confidence, 0) / Math.max(candidates.length, 1)) * 100,
     ),
     manualReviewRate: Math.round(
-      (candidates.filter((item) => item.needs_manual_review).length / candidates.length) * 100,
+      (candidates.filter((item) => item.needs_manual_review).length / Math.max(candidates.length, 1)) * 100,
     ),
   };
 }

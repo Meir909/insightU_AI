@@ -2,6 +2,7 @@ import { Flag, ShieldCheck, Star } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AIDetectionBadge } from "@/components/dashboard/ai-detection-badge";
+import { CommitteeVotePanel } from "@/components/dashboard/committee-vote-panel";
 import { ConfidenceRing } from "@/components/dashboard/confidence-ring";
 import { ExplainabilityBlock } from "@/components/dashboard/explainability-block";
 import { ScoreRadar } from "@/components/dashboard/score-radar";
@@ -190,6 +191,8 @@ export default async function CandidatePage({
               ))}
             </div>
           </div>
+
+          <CommitteeVotePanel candidate={candidate} />
 
           {[
             { label: "Цели кандидата", value: candidate.goals },

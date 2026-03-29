@@ -18,8 +18,8 @@ export function getServiceStatus(): ServiceState[] {
     {
       key: "dashboard",
       label: "Dashboard Data Layer",
-      configured: envFlags.api,
-      detail: env.NEXT_PUBLIC_API_BASE_URL || "Using mock ranking fallback",
+      configured: envFlags.supabase || envFlags.api,
+      detail: envFlags.supabase ? "Supabase persistence enabled" : env.NEXT_PUBLIC_API_BASE_URL || "Using local persistence fallback",
     },
     {
       key: "llm",

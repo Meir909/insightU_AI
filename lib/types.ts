@@ -18,6 +18,7 @@ export interface CandidateArtifact {
   transcript?: string;
   extractedSignals: string[];
   evidenceWeight: number;
+  storagePath?: string;
 }
 
 export interface ModelContribution {
@@ -87,6 +88,9 @@ export interface Candidate {
   ensemble?: ModelContribution[];
   explainability_v2?: AdvancedExplainability;
   committee_review?: CommitteeReview;
+  evaluation_session_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ChatAttachment {
@@ -98,6 +102,7 @@ export interface ChatAttachment {
   status: "uploaded" | "processing" | "ready";
   transcript?: string;
   extractedSignals?: string[];
+  storagePath?: string;
 }
 
 export interface ChatMessage {

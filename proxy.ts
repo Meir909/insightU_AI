@@ -18,7 +18,7 @@ export default function proxy(request: NextRequest) {
     }
   }
 
-  if (pathname.startsWith("/api/chat")) {
+  if (pathname.startsWith("/api/chat") || pathname.startsWith("/api/committee")) {
     if (!sessionId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
