@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -45,6 +46,7 @@ export function SessionControls({ compact = false }: { compact?: boolean }) {
 
   const Icon = data.session.role === "committee" ? ShieldCheck : UserRound;
   const meta = data.session.role === "committee" ? data.session.email : data.session.phone;
+  const profileHref = data.session.role === "committee" ? "/dashboard/account" : "/account";
 
   return (
     <div className={`flex items-center gap-3 ${compact ? "" : "rounded-[22px] border border-white/8 bg-bg-surface px-4 py-3"}`}>
@@ -55,6 +57,12 @@ export function SessionControls({ compact = false }: { compact?: boolean }) {
         <p className="text-sm font-semibold text-white">{data.session.name}</p>
         <p className="text-xs text-text-muted">{meta || (data.session.role === "committee" ? "Комиссия" : "Кандидат")}</p>
       </div>
+      <Link
+        href={profileHref}
+        className="inline-flex h-10 items-center justify-center rounded-2xl border border-white/8 px-3 text-sm text-text-secondary transition-colors hover:border-brand-green/20 hover:text-white"
+      >
+        Кабинет
+      </Link>
       <button
         type="button"
         onClick={logout}

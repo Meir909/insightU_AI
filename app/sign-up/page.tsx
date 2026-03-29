@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { ShieldCheck, Sparkles } from "lucide-react";
-import { LoginEntry } from "@/components/auth/login-entry";
+import { RegisterEntry } from "@/components/auth/register-entry";
 import { SignInScene } from "@/components/sign-in/sign-in-scene";
 
-export default function SignInPage() {
+export default function SignUpPage() {
   return (
     <div className="relative flex min-h-screen items-center overflow-hidden bg-bg-base px-4 py-8">
       <SignInScene />
@@ -16,18 +16,19 @@ export default function SignInPage() {
           </div>
 
           <div className="max-w-3xl space-y-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-text-muted">Sign in</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-text-muted">Sign up</p>
             <h1 className="text-5xl font-black leading-[0.94] tracking-[-0.05em] text-white md:text-7xl">
-              Вход в
-              <span className="block text-brand-green">личный кабинет</span>
+              Создание
+              <span className="block text-brand-green">аккаунта</span>
             </h1>
             <p className="max-w-2xl text-base leading-relaxed text-text-secondary md:text-lg">
-              Кандидат получает личный кабинет и доступ к интервью, комиссия — персональный рабочий кабинет review.
+              После регистрации кандидат получает личный кабинет и интервью-сессию, а комиссия — персональный доступ к
+              dashboard и review workflow.
             </p>
           </div>
 
-          <Link href="/sign-up" className="inline-flex text-sm text-text-secondary hover:text-white">
-            Нет аккаунта? Создать новый →
+          <Link href="/sign-in" className="inline-flex text-sm text-text-secondary hover:text-white">
+            Уже есть аккаунт? Войти →
           </Link>
         </section>
 
@@ -37,11 +38,11 @@ export default function SignInPage() {
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div className="space-y-1">
-              <p className="text-lg font-black tracking-tight text-white">Вход</p>
-              <p className="text-sm leading-relaxed text-text-muted">Используйте данные своего аккаунта.</p>
+              <p className="text-lg font-black tracking-tight text-white">Регистрация</p>
+              <p className="text-sm leading-relaxed text-text-muted">Создайте отдельный аккаунт кандидата или комиссии.</p>
             </div>
           </div>
-          <LoginEntry />
+          <RegisterEntry />
         </section>
       </div>
     </div>

@@ -29,14 +29,17 @@ const cookieOptions = {
 
 const clean = (value?: string | null) => value?.trim() || undefined;
 
-export function createSessionId() {
-  return randomUUID();
-}
-
-export function getAuthSession(request: NextRequest): AuthSession | null {
-  const sessionId = clean(request.cookies.get(AUTH_SESSION_COOKIE)?.value);
-  const role = clean(request.cookies.get(AUTH_ROLE_COOKIE)?.value) as AuthRole | undefined;
-  const name = clean(request.cookies.get(AUTH_NAME_COOKIE)?.value);
+export function parseAuthSession(input: {
+  sessionId?: string | null;
+  role?: string | null;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  entityId?: string | null;
+}): AuthSession | null {
+  const sessionId = clean(input.sessionId);
+  const role = clean(input.role) as AuthRole | undefined;
+  const name = clean(input.name);
 
   if (!sessionId || !role || !name) {
     return null;
@@ -50,10 +53,25 @@ export function getAuthSession(request: NextRequest): AuthSession | null {
     sessionId,
     role,
     name,
-    email: clean(request.cookies.get(AUTH_EMAIL_COOKIE)?.value),
-    phone: clean(request.cookies.get(AUTH_PHONE_COOKIE)?.value),
-    entityId: clean(request.cookies.get(AUTH_ENTITY_COOKIE)?.value),
+    email: clean(input.email),
+    phone: clean(input.phone),
+    entityId: clean(input.entityId),
   };
+}
+
+export function createSessionId() {
+  return randomUUID();
+}
+
+export function getAuthSession(request: NextRequest): AuthSession | null {
+  return parseAuthSession({
+    sessionId: request.cookies.get(AUTH_SESSION_COOKIE)?.value,
+    role: request.cookies.get(AUTH_ROLE_COOKIE)?.value,
+    name: request.cookies.get(AUTH_NAME_COOKIE)?.value,
+    email: request.cookies.get(AUTH_EMAIL_COOKIE)?.value,
+    phone: request.cookies.get(AUTH_PHONE_COOKIE)?.value,
+    entityId: request.cookies.get(AUTH_ENTITY_COOKIE)?.value,
+  });
 }
 
 export function applyAuthCookies(response: NextResponse, session: AuthSession) {

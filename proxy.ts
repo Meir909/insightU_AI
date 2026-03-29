@@ -12,6 +12,12 @@ export default function proxy(request: NextRequest) {
     }
   }
 
+  if (pathname.startsWith("/account")) {
+    if (!sessionId || role !== "candidate") {
+      return NextResponse.redirect(new URL("/sign-in", request.url));
+    }
+  }
+
   if (pathname.startsWith("/interview")) {
     if (!sessionId) {
       return NextResponse.redirect(new URL("/sign-in", request.url));

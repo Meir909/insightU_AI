@@ -35,6 +35,18 @@ create table if not exists public.committee_members (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.auth_accounts (
+  id text primary key,
+  role text not null,
+  name text not null,
+  email text,
+  phone text,
+  password_hash text not null,
+  entity_id text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.committee_votes (
   candidate_id text not null references public.candidates(id) on delete cascade,
   member_id text not null references public.committee_members(id) on delete cascade,
