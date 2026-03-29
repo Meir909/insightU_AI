@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { enrichCandidate } from "@/lib/evaluation";
 import { MOCK_CANDIDATES } from "@/lib/mock-data";
 import type { Candidate } from "@/lib/types";
 
@@ -14,12 +15,16 @@ function normalizeCandidate(candidate: Partial<Candidate> & { id?: string }): Ca
   const fallback = MOCK_CANDIDATES.find((item) => item.id === candidate.id);
   if (!fallback) return null;
 
-  return {
+  return enrichCandidate({
     ...fallback,
     ...candidate,
     ai_signals: candidate.ai_signals ?? fallback.ai_signals,
     key_quotes: candidate.key_quotes ?? fallback.key_quotes,
-  };
+    artifacts: candidate.artifacts ?? fallback.artifacts,
+    ensemble: candidate.ensemble ?? fallback.ensemble,
+    explainability_v2: candidate.explainability_v2 ?? fallback.explainability_v2,
+    committee_review: candidate.committee_review ?? fallback.committee_review,
+  });
 }
 
 async function fetchJson<T>(path: string): Promise<T | null> {
@@ -59,7 +64,7 @@ export async function getRanking(): Promise<Candidate[]> {
     if (normalized.length > 0) return normalized;
   }
 
-  return MOCK_CANDIDATES;
+  return MOCK_CANDIDATES.map(enrichCandidate);
 }
 
 export async function getCandidate(id: string): Promise<Candidate | null> {
@@ -70,7 +75,8 @@ export async function getCandidate(id: string): Promise<Candidate | null> {
     if (normalized) return normalized;
   }
 
-  return MOCK_CANDIDATES.find((candidate) => candidate.id === id) ?? null;
+  const fallback = MOCK_CANDIDATES.find((candidate) => candidate.id === id) ?? null;
+  return fallback ? enrichCandidate(fallback) : null;
 }
 
 export async function getShortlist(): Promise<Candidate[]> {
@@ -83,7 +89,7 @@ export async function getShortlist(): Promise<Candidate[]> {
     if (normalized.length > 0) return normalized;
   }
 
-  return MOCK_CANDIDATES.filter((candidate) => candidate.status === "shortlisted");
+  return MOCK_CANDIDATES.filter((candidate) => candidate.status === "shortlisted").map(enrichCandidate);
 }
 
 export async function getFairnessSummary(): Promise<FairnessSummary> {
@@ -98,16 +104,15 @@ export async function getFairnessSummary(): Promise<FairnessSummary> {
     return { fairnessScore, avgConfidence, manualReviewRate };
   }
 
+  const candidates = MOCK_CANDIDATES.map(enrichCandidate);
+
   return {
     fairnessScore: 0.86,
     avgConfidence: Math.round(
-      (MOCK_CANDIDATES.reduce((sum, candidate) => sum + candidate.confidence, 0) /
-        MOCK_CANDIDATES.length) *
-        100,
+      (candidates.reduce((sum, candidate) => sum + candidate.confidence, 0) / candidates.length) * 100,
     ),
     manualReviewRate: Math.round(
-      (MOCK_CANDIDATES.filter((item) => item.needs_manual_review).length / MOCK_CANDIDATES.length) *
-        100,
+      (candidates.filter((item) => item.needs_manual_review).length / candidates.length) * 100,
     ),
   };
 }

@@ -8,8 +8,21 @@ import { ScorePill } from "@/components/chat/score-pill";
 import { useChat } from "@/hooks/use-chat";
 
 function InterviewClient() {
-  const { messages, input, setInput, sendMessage, loading, progress, status, scoreUpdate, phase } =
-    useChat();
+  const {
+    messages,
+    input,
+    setInput,
+    sendMessage,
+    loading,
+    uploading,
+    attachments,
+    uploadFiles,
+    removeAttachment,
+    progress,
+    status,
+    scoreUpdate,
+    phase,
+  } = useChat();
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1.2fr_0.45fr]">
@@ -20,18 +33,28 @@ function InterviewClient() {
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
             <h1 className="text-4xl font-black tracking-[-0.04em] text-white">
-              Web Chat Agent for inVision U
+              Multimodal Web Chat Agent
             </h1>
             <SessionControls compact />
           </div>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-text-secondary">
-            Этот AI interviewer собирает ответы кандидата, обновляет промежуточную оценку и передаёт её комиссии. Итоговое решение не
-            объявляется кандидату автоматически.
+            Кандидат может отвечать текстом и прикладывать voice, video и документы. Система обновляет промежуточную оценку и передаёт
+            аргументированную рекомендацию только комиссии.
           </p>
         </div>
 
-        <ChatWindow messages={messages} loading={loading} />
-        <InputBox value={input} onChange={setInput} onSubmit={sendMessage} loading={loading} disabled={status === "completed"} />
+        <ChatWindow messages={messages} loading={loading || uploading} />
+        <InputBox
+          value={input}
+          onChange={setInput}
+          onSubmit={sendMessage}
+          onFilesSelected={uploadFiles}
+          onRemoveAttachment={removeAttachment}
+          attachments={attachments}
+          loading={loading}
+          uploading={uploading}
+          disabled={status === "completed"}
+        />
       </section>
 
       <aside className="space-y-4">
@@ -69,7 +92,7 @@ function InterviewClient() {
             </div>
             <div>
               <p className="text-sm font-bold text-white">Intermediate scoring</p>
-              <p className="text-xs text-text-muted">Updated after each answer</p>
+              <p className="text-xs text-text-muted">Updated after each answer and attachment</p>
             </div>
           </div>
           {scoreUpdate ? (
@@ -84,6 +107,11 @@ function InterviewClient() {
                 <ScorePill label="Leadership" value={scoreUpdate.leadership} />
                 <ScorePill label="Growth" value={scoreUpdate.growth} />
                 <ScorePill label="Decision" value={scoreUpdate.decision} />
+              </div>
+              <div className="rounded-2xl border border-white/6 bg-bg-elevated p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-text-muted">Recommendation</p>
+                <p className="mt-2 text-sm font-semibold text-white">{scoreUpdate.recommendation}</p>
+                <p className="mt-2 text-sm leading-relaxed text-text-secondary">{scoreUpdate.explanation}</p>
               </div>
             </div>
           ) : (
@@ -102,7 +130,8 @@ function InterviewClient() {
             </div>
           </div>
           <p className="mt-4 text-sm leading-relaxed text-text-secondary">
-            Candidate sees only the interview flow. Recommendation and evaluation details go to the commission dashboard.
+            Финальное решение остаётся за комиссией. Один голос комиссии не может принять кандидата: нужен минимум коллегиальный порог
+            одобрения.
           </p>
         </div>
       </aside>

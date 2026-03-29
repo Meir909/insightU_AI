@@ -38,6 +38,21 @@ function AIPill({ probability }: { probability: number }) {
   );
 }
 
+function ReviewPill({ candidate }: { candidate: Candidate }) {
+  const approved = candidate.committee_review?.approvedCount ?? 0;
+  const required = candidate.committee_review?.requiredApprovals ?? 2;
+  const finalDecision = candidate.committee_review?.finalDecision ?? "pending";
+
+  const tone =
+    finalDecision === "approved"
+      ? "bg-brand-green/12 text-brand-green"
+      : finalDecision === "rejected"
+        ? "bg-status-low/12 text-status-low"
+        : "bg-status-mid/12 text-status-mid";
+
+  return <span className={`rounded-xl px-3 py-1 font-mono text-xs font-bold ${tone}`}>{approved}/{required}</span>;
+}
+
 export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -46,21 +61,11 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
   const filtered = useMemo(() => {
     const normalized = search.trim().toLowerCase();
     const list = candidates.filter((candidate) => {
-      const haystack = [
-        candidate.code,
-        candidate.city,
-        candidate.program,
-        candidate.name,
-      ]
-        .join(" ")
-        .toLowerCase();
-
+      const haystack = [candidate.code, candidate.city, candidate.program, candidate.name].join(" ").toLowerCase();
       return haystack.includes(normalized);
     });
 
-    return list.sort((a, b) =>
-      sortDesc ? b.final_score - a.final_score : a.final_score - b.final_score,
-    );
+    return list.sort((a, b) => (sortDesc ? b.final_score - a.final_score : a.final_score - b.final_score));
   }, [candidates, search, sortDesc]);
 
   return (
@@ -89,16 +94,14 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
         <table className="min-w-full">
           <thead>
             <tr className="border-b border-white/6">
-              {["#", "Кандидат", "Итог", "Мышление", "Рост", "AI", "Статус", ""].map(
-                (label) => (
-                  <th
-                    key={label}
-                    className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted"
-                  >
-                    {label}
-                  </th>
-                ),
-              )}
+              {["#", "Кандидат", "Итог", "Мышление", "Рост", "Review", "AI", "Статус", ""].map((label) => (
+                <th
+                  key={label}
+                  className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted"
+                >
+                  {label}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -125,7 +128,7 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
                         ) : null}
                       </div>
                       <p className="text-xs text-text-secondary">
-                        {candidate.city} · {candidate.program}
+                        {candidate.city} • {candidate.program}
                       </p>
                     </div>
                   </div>
@@ -133,11 +136,10 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
                 <td className="px-4 py-4">
                   <ScorePill score={candidate.final_score} />
                 </td>
-                <td className="px-4 py-4 font-mono text-sm text-text-secondary">
-                  {candidate.cognitive.toFixed(0)}
-                </td>
-                <td className="px-4 py-4 font-mono text-sm text-text-secondary">
-                  {candidate.growth.toFixed(0)}
+                <td className="px-4 py-4 font-mono text-sm text-text-secondary">{candidate.cognitive.toFixed(0)}</td>
+                <td className="px-4 py-4 font-mono text-sm text-text-secondary">{candidate.growth.toFixed(0)}</td>
+                <td className="px-4 py-4">
+                  <ReviewPill candidate={candidate} />
                 </td>
                 <td className="px-4 py-4">
                   <AIPill probability={candidate.ai_detection_prob} />

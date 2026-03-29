@@ -4,9 +4,21 @@ import { getAuthSession } from "@/lib/server/auth";
 import { appendUserMessage, getOrCreateSession } from "@/lib/server/interview-store";
 import { getServiceLabel } from "@/lib/server/interviewer";
 
+const attachmentSchema = z.object({
+  id: z.string(),
+  kind: z.enum(["text", "audio", "video", "document"]),
+  name: z.string(),
+  mimeType: z.string(),
+  sizeKb: z.number(),
+  status: z.enum(["uploaded", "processing", "ready"]),
+  transcript: z.string().optional(),
+  extractedSignals: z.array(z.string()).optional(),
+});
+
 const postSchema = z.object({
   message: z.string().min(1),
   session_id: z.string().min(1),
+  attachments: z.array(attachmentSchema).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -38,7 +50,13 @@ export async function POST(request: NextRequest) {
   }
 
   const payload = postSchema.parse(await request.json());
-  const result = await appendUserMessage(payload.session_id, sessionAuth.sessionId, payload.message);
+  const result = await appendUserMessage(
+    payload.session_id,
+    sessionAuth.sessionId,
+    payload.message,
+    payload.attachments ?? [],
+  );
+
   return NextResponse.json({
     reply: result.reply,
     progress: result.progress,
