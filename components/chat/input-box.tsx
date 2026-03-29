@@ -27,7 +27,7 @@ export function InputBox({
   disabled,
 }: InputBoxProps) {
   return (
-    <div className="rounded-[28px] border border-white/6 bg-bg-surface p-3">
+    <div className="panel-soft p-3">
       {attachments.length > 0 ? (
         <div className="mb-3 flex flex-wrap gap-2 px-2 pt-1">
           {attachments.map((attachment) => (
@@ -35,7 +35,7 @@ export function InputBox({
               key={attachment.id}
               type="button"
               onClick={() => onRemoveAttachment(attachment.id)}
-              className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-bg-elevated px-3 py-2 text-xs text-text-secondary transition-colors hover:text-white"
+              className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-bg-elevated px-3 py-2 text-xs text-text-secondary transition-colors hover:border-brand-green/20 hover:text-white"
             >
               {attachment.kind === "audio" ? <Waves className="h-3.5 w-3.5" /> : attachment.kind === "video" ? <Video className="h-3.5 w-3.5" /> : <Paperclip className="h-3.5 w-3.5" />}
               {attachment.name}
@@ -79,7 +79,7 @@ export function InputBox({
           type="button"
           disabled={disabled || loading || uploading}
           onClick={onSubmit}
-          className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-green text-black transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-green text-black transition-all hover:bg-brand-dim disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
         </button>

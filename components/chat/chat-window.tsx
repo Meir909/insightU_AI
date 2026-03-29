@@ -18,14 +18,14 @@ export function ChatWindow({
   }, [messages, loading]);
 
   return (
-    <div className="rounded-[32px] border border-white/6 bg-bg-base/70 p-4 grain">
-      <div className="flex h-[58vh] flex-col gap-4 overflow-y-auto pr-2">
+    <div className="panel-soft grain p-4">
+      <div className="flex h-[58vh] flex-col gap-4 overflow-y-auto pr-1">
         {messages.map((message) => (
           <MessageBubble key={message.id} message={message} />
         ))}
         {loading ? (
           <div className="flex justify-start">
-            <div className="rounded-[24px] border border-white/6 bg-bg-surface px-4 py-3 text-sm text-text-secondary">
+            <div className="rounded-[20px] border border-white/6 bg-white/[0.03] px-4 py-3 text-sm text-text-secondary">
               AI is thinking...
             </div>
           </div>

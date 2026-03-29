@@ -29,10 +29,7 @@ export function AuthEntry() {
   const submit = async () => {
     setSubmitting(true);
 
-    const payload =
-      role === "candidate"
-        ? { role, ...candidate }
-        : { role, ...committee };
+    const payload = role === "candidate" ? { role, ...candidate } : { role, ...committee };
 
     const response = await fetch("/api/auth/session", {
       method: "POST",
@@ -54,8 +51,8 @@ export function AuthEntry() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-2 rounded-[22px] border border-white/8 bg-bg-elevated/80 p-1.5">
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-2 rounded-[20px] border border-white/8 bg-bg-elevated/70 p-1.5">
         {[
           { key: "candidate", label: "Кандидат", icon: UserRound },
           { key: "committee", label: "Комиссия", icon: LockKeyhole },
@@ -67,10 +64,8 @@ export function AuthEntry() {
               key={key}
               type="button"
               onClick={() => setRole(key as Role)}
-              className={`flex items-center justify-center gap-2 rounded-[18px] px-4 py-3 text-sm font-semibold transition-all ${
-                active
-                  ? "bg-brand-green text-black shadow-green-sm"
-                  : "text-text-secondary hover:bg-white/4 hover:text-white"
+              className={`flex items-center justify-center gap-2 rounded-[16px] px-4 py-3 text-sm font-semibold transition-all ${
+                active ? "bg-brand-green text-black shadow-green-sm" : "text-text-secondary hover:bg-white/4 hover:text-white"
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -90,6 +85,7 @@ export function AuthEntry() {
               className="auth-input"
             />
           </Field>
+
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Номер телефона KZ">
               <input
@@ -108,8 +104,10 @@ export function AuthEntry() {
               />
             </Field>
           </div>
-          <div className="rounded-[22px] border border-white/8 bg-white/[0.03] px-4 py-3 text-sm leading-relaxed text-text-secondary">
-            После регистрации кандидат попадает в web interview. Итоговые рекомендации и скоринг остаются только у комиссии.
+
+          <div className="panel-muted px-4 py-3 text-sm leading-relaxed text-text-secondary">
+            После регистрации кандидат сразу переходит в AI interview. Итоговый scoring и рекомендации доступны только
+            комиссии.
           </div>
         </div>
       ) : (
@@ -146,7 +144,7 @@ export function AuthEntry() {
         type="button"
         onClick={submit}
         disabled={submitting}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-[22px] bg-brand-green px-5 py-3.5 text-sm font-bold text-black transition-all hover:bg-brand-dim disabled:cursor-not-allowed disabled:opacity-70"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-[20px] bg-brand-green px-5 py-3.5 text-sm font-bold text-black transition-all hover:bg-brand-dim disabled:cursor-not-allowed disabled:opacity-70"
       >
         {submitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
         {role === "candidate" ? "Продолжить в интервью" : "Открыть dashboard"}

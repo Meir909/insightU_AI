@@ -33,8 +33,9 @@ html {
 body {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top right, rgba(200, 240, 0, 0.08), transparent 28%),
-    linear-gradient(180deg, #111111 0%, #0c0c0c 38%, #090909 100%);
+    radial-gradient(circle at top right, rgba(200, 240, 0, 0.06), transparent 24%),
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.03), transparent 22%),
+    linear-gradient(180deg, #101010 0%, #0c0c0c 36%, #090909 100%);
   color: #ffffff;
   font-family: var(--font-sans), sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -110,6 +111,24 @@ a {
 
 .surface-card:hover {
   border-color: rgba(200, 240, 0, 0.2);
+}
+
+.page-shell {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.panel-soft {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(18, 18, 18, 0.92);
+  border-radius: 28px;
+}
+
+.panel-muted {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 22px;
 }
 
 .auth-input {

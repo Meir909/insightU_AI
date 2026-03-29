@@ -9,7 +9,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <Sidebar />
       <div className="lg:ml-64">
         <TopBar />
-        <main className="px-4 py-6 pb-24 lg:px-8 lg:pb-6">{children}</main>
+        <main className="page-shell px-4 py-6 pb-24 lg:px-8 lg:pb-6">{children}</main>
       </div>
       <MobileNav />
     </div>
