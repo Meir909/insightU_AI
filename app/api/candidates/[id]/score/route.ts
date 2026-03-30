@@ -10,7 +10,7 @@ const scoreSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = getAuthSession(request);
   if (!session) {
@@ -22,7 +22,7 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { id } = params;
+  const { id } = await params;
 
   try {
     const body = await request.json();
