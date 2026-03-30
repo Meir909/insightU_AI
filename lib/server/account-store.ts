@@ -8,7 +8,7 @@ import {
   registerCandidateProfile,
   registerCommitteeMember,
   saveAccount,
-} from "@/lib/server/simple-store";
+} from "@/lib/server/serverless-store";
 import { getSupabaseAdmin } from "@/lib/server/supabase";
 import type { AuthRole } from "@/lib/server/auth";
 

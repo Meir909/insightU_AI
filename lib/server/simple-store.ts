@@ -1,25 +1,31 @@
-// Serverless-compatible store using in-memory storage
-// In production, this should use Redis or database
-
+// Serverless-compatible store using globalThis for cross-request persistence
 import { randomUUID } from 'crypto';
 
-// In-memory storage for serverless environment
-// Note: This resets on each deployment and function cold start
-const globalStore = {
-  accounts: [] as AuthAccount[],
-  authSessions: [] as AuthSession[],
-  candidates: [] as Candidate[],
-  interviewSessions: [] as InterviewSession[],
-  committeeMembers: [] as CommitteeMember[],
-  committeeVotes: {} as Record<string, CommitteeVote[]>,
+// Use globalThis to persist data across requests in serverless environment
+const getStore = () => {
+  if (!(globalThis as any).__INSIGHTU_STORE__) {
+    (globalThis as any).__INSIGHTU_STORE__ = {
+      accounts: [] as AuthAccount[],
+      authSessions: [] as AuthSession[],
+      candidates: [] as Candidate[],
+      interviewSessions: [] as InterviewSession[],
+      committeeMembers: [] as CommitteeMember[],
+      committeeVotes: {} as Record<string, CommitteeVote[]>,
+      _initialized: false,
+    };
+  }
+  return (globalThis as any).__INSIGHTU_STORE__;
 };
 
-// Add test data for demo
-if (globalStore.accounts.length === 0) {
+// Initialize test data once
+function initializeTestData() {
+  const store = getStore();
+  if (store._initialized) return;
+  
   const testCandidateId = 'cand-test001';
   const testAccountId = 'acct-test001';
   
-  globalStore.accounts.push({
+  store.accounts.push({
     id: testAccountId,
     role: 'candidate',
     name: 'Test Candidate',
@@ -31,7 +37,7 @@ if (globalStore.accounts.length === 0) {
     updatedAt: new Date().toISOString(),
   });
 
-  globalStore.candidates.push({
+  store.candidates.push({
     id: testCandidateId,
     code: 'IU-2401',
     name: 'Test Candidate',
@@ -47,6 +53,15 @@ if (globalStore.accounts.length === 0) {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
+  
+  store._initialized = true;
+}
+
+// Initialize on module load
+initializeTestData();
+
+export function getGlobalStore() {
+  return getStore();
 }
 
 export interface AuthAccount {
