@@ -82,6 +82,11 @@ model Candidate {
   leadershipDesc    String? @map("leadership_desc") @db.Text
   teamworkDesc      String? @map("teamwork_desc") @db.Text
 
+  // Consent & privacy
+  dataProcessingConsent Boolean   @default(false) @map("data_processing_consent")
+  consentAcceptedAt     DateTime? @map("consent_accepted_at")
+  privacyPolicyAcceptedAt DateTime? @map("privacy_policy_accepted_at")
+
   // Status
   status       CandidateStatus @default(in_progress)
   overallScore Float?          @map("overall_score")

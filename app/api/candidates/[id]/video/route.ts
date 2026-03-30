@@ -1,146 +1,173 @@
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/server/auth";
-import { getStore } from "@/lib/server/serverless-store";
-import { analyzeVideo, analyzeAudio, analyzeVoiceMessage } from "@/lib/services/media-analysis";
+import { addSecurityHeaders } from "@/lib/server/security";
+import {
+  createArtifact,
+  createAuditLog,
+  createLiveInterviewRecord,
+  getCandidateById,
+  getInterviewSessionByCandidateId,
+  getAuthenticatedAccountByToken,
+} from "@/lib/server/prisma";
+import { analyzeVideo } from "@/lib/services/media-analysis";
+import { uploadVideo, validateFile } from "@/lib/services/s3";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = getAuthSession(request);
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return addSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
   const { id } = await params;
-
-  // Candidates can only upload their own video
   if (session.role === "candidate" && session.entityId !== id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return addSecurityHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }));
   }
 
   try {
     const formData = await request.formData();
-    const video = formData.get("video") as File;
-    const question = formData.get("question") as string || "Tell us about yourself";
+    const video = formData.get("video");
+    const question = String(formData.get("question") || "Tell us about yourself");
 
-    if (!video) {
-      return NextResponse.json({ error: "No video file provided" }, { status: 400 });
+    if (!(video instanceof File)) {
+      return addSecurityHeaders(NextResponse.json({ error: "No video file provided" }, { status: 400 }));
     }
 
-    // Validate file type
-    const allowedTypes = [
-      "video/mp4",
-      "video/webm",
-      "video/quicktime",
-      "video/x-msvideo",
-    ];
-    
-    if (!allowedTypes.includes(video.type)) {
-      return NextResponse.json(
-        { error: "Invalid video format. Use MP4, WebM, MOV, or AVI" },
-        { status: 400 }
-      );
+    const validation = validateFile(video, "video");
+    if (!validation.valid) {
+      return addSecurityHeaders(NextResponse.json({ error: validation.error }, { status: 400 }));
     }
 
-    // Validate file size (max 100MB for video)
-    if (video.size > 100 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: "Video too large. Max 100MB" },
-        { status: 400 }
-      );
-    }
-
-    const store = getStore();
-    const candidate = store.candidates.find((c: any) => c.id === id) as any;
-
+    const candidate = await getCandidateById(id);
     if (!candidate) {
-      return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
+      return addSecurityHeaders(NextResponse.json({ error: "Candidate not found" }, { status: 404 }));
     }
 
-    // Convert file to buffer
-    const bytes = await video.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const bytes = Buffer.from(await video.arrayBuffer());
+    const upload = await uploadVideo(bytes, video.name, video.type, id);
+    if (!upload.success || !upload.url) {
+      return addSecurityHeaders(
+        NextResponse.json({ error: upload.error || "Failed to upload video" }, { status: 500 }),
+      );
+    }
 
-    // Analyze video
-    const analysis = await analyzeVideo(buffer, video.type, question);
-
-    // Save analysis results
-    const videoId = `video-${Date.now()}`;
-    candidate.videoInterviews = candidate.videoInterviews || [];
-    candidate.videoInterviews.push({
-      id: videoId,
-      question,
-      uploadedAt: new Date().toISOString(),
-      analysis,
-    });
-
-    // Update candidate scores with video metrics
-    candidate.videoScores = {
-      communication: analysis.scores.communication,
-      presentation: analysis.scores.presentation,
-      content: analysis.scores.content,
-      overall: analysis.scores.overall,
-    };
-
-    candidate.updatedAt = new Date().toISOString();
-
-    return NextResponse.json({
-      success: true,
-      videoId,
+    const analysis = await analyzeVideo(bytes, video.type, question);
+    const artifact = await createArtifact({
+      candidateId: id,
+      type: "video",
+      name: video.name,
+      url: upload.url,
+      size: video.size,
+      mimeType: video.type,
       analysis: {
-        scores: analysis.scores,
-        transcript: analysis.transcript,
-        behavioralAnalysis: analysis.behavioralAnalysis,
-        redFlags: analysis.redFlags,
-        summary: analysis.summary,
-        highlights: analysis.highlights,
+        question,
+        ...analysis,
       },
-      nextStep: "review_pending",
     });
 
+    const interviewSession = await getInterviewSessionByCandidateId(id);
+    await createLiveInterviewRecord({
+      candidateId: id,
+      sessionId: interviewSession?.id ?? `video-${randomUUID()}`,
+      type: "behavioral",
+      videoAnalysis: analysis,
+      combinedScore: analysis.scores.overall,
+      keyMoments: { highlights: analysis.highlights },
+      confidence: analysis.behavioralAnalysis.confidence,
+      stressLevel: analysis.behavioralAnalysis.stressLevel,
+      authenticity: analysis.behavioralAnalysis.authenticity,
+      recommendation: analysis.scores.overall >= 75 ? "proceed" : "manual_review",
+    });
+
+    const persistedSession = await getAuthenticatedAccountByToken(session.sessionId);
+    await createAuditLog({
+      action: "VIDEO_ARTIFACT_UPLOADED",
+      entityType: "artifact",
+      entityId: artifact.id,
+      actorId: persistedSession?.account.id,
+      actorType: session.role,
+      actorName: session.name,
+      ipAddress: request.headers.get("x-forwarded-for")?.split(",")[0] || undefined,
+      userAgent: request.headers.get("user-agent") || undefined,
+      details: {
+        candidateId: id,
+        artifactType: "video",
+        question,
+        overallScore: analysis.scores.overall,
+      },
+    });
+
+    return addSecurityHeaders(
+      NextResponse.json({
+        success: true,
+        artifactId: artifact.id,
+        analysis: {
+          scores: analysis.scores,
+          transcript: analysis.transcript,
+          behavioralAnalysis: analysis.behavioralAnalysis,
+          redFlags: analysis.redFlags,
+          summary: analysis.summary,
+          highlights: analysis.highlights,
+        },
+      }),
+    );
   } catch (error) {
-    console.error("Video upload error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to analyze video" },
-      { status: 500 }
+    return addSecurityHeaders(
+      NextResponse.json(
+        { error: error instanceof Error ? error.message : "Failed to analyze video" },
+        { status: 500 },
+      ),
     );
   }
 }
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = getAuthSession(request);
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return addSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
   const { id } = await params;
-
-  // Candidates can only view their own
   if (session.role === "candidate" && session.entityId !== id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return addSecurityHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }));
   }
 
   try {
-    const store = getStore();
-    const candidate = store.candidates.find((c: any) => c.id === id) as any;
-
+    const candidate = await getCandidateById(id);
     if (!candidate) {
-      return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
+      return addSecurityHeaders(NextResponse.json({ error: "Candidate not found" }, { status: 404 }));
     }
 
-    return NextResponse.json({
-      videos: candidate.videoInterviews || [],
-      latestScore: candidate.videoScores || null,
-    });
+    const videos = candidate.artifacts
+      .filter((artifact) => artifact.type === "video")
+      .map((artifact) => ({
+        id: artifact.id,
+        name: artifact.name,
+        url: artifact.url,
+        uploadedAt: artifact.createdAt.toISOString(),
+        analysis: artifact.analysis,
+      }));
 
+    const latestVideo = videos[0]?.analysis as { scores?: { overall?: number } } | undefined;
+
+    return addSecurityHeaders(
+      NextResponse.json({
+        videos,
+        latestScore: latestVideo?.scores || null,
+      }),
+    );
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch videos" },
-      { status: 500 }
+    return addSecurityHeaders(
+      NextResponse.json(
+        { error: error instanceof Error ? error.message : "Failed to fetch videos" },
+        { status: 500 },
+      ),
     );
   }
 }

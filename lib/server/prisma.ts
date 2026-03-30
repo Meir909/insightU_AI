@@ -389,8 +389,9 @@ export async function getCandidateApplicationRecord(candidateId: string) {
       applicationSubmittedAt: latestApplicationAudit?.createdAt?.toISOString(),
       applicationScores: snapshot.applicationScores ?? null,
       consent: {
-        agreeToTerms: snapshot.agreeToTerms ?? false,
-        consentCapturedAt: latestApplicationAudit?.createdAt?.toISOString(),
+        agreeToTerms: candidate.dataProcessingConsent || snapshot.agreeToTerms || false,
+        consentCapturedAt: candidate.consentAcceptedAt?.toISOString() ?? latestApplicationAudit?.createdAt?.toISOString(),
+        privacyAcceptedAt: candidate.privacyPolicyAcceptedAt?.toISOString(),
       },
     },
     resumeUrl: candidate.resume?.fileUrl,
@@ -438,6 +439,9 @@ export async function submitCandidateApplication(params: {
           application.leadershipDescription ||
           application.teamExperienceDescription ||
           "Experience provided in structured application.",
+        dataProcessingConsent: true,
+        consentAcceptedAt: new Date(),
+        privacyPolicyAcceptedAt: new Date(),
         status: "completed",
         overallScore: params.scores.overall,
       },
@@ -682,6 +686,53 @@ export async function createResume(data: {
       mimeType: data.mimeType,
       extractedText: data.extractedText,
       keywords: data.keywords || [],
+    },
+  });
+}
+
+export async function createLiveInterviewRecord(data: {
+  candidateId: string;
+  sessionId: string;
+  type: string;
+  status?: string;
+  videoAnalysis?: object | null;
+  voiceAnalysis?: object | null;
+  combinedScore?: number | null;
+  keyMoments?: object | null;
+  confidence?: number | null;
+  stressLevel?: number | null;
+  authenticity?: number | null;
+  recommendation?: string | null;
+}) {
+  return prisma.liveInterview.upsert({
+    where: { sessionId: data.sessionId },
+    update: {
+      type: data.type,
+      status: data.status ?? "completed",
+      videoAnalysis: data.videoAnalysis ?? undefined,
+      voiceAnalysis: data.voiceAnalysis ?? undefined,
+      combinedScore: data.combinedScore ?? undefined,
+      keyMoments: data.keyMoments ?? undefined,
+      confidence: data.confidence ?? undefined,
+      stressLevel: data.stressLevel ?? undefined,
+      authenticity: data.authenticity ?? undefined,
+      recommendation: data.recommendation ?? undefined,
+      completedAt: new Date(),
+    },
+    create: {
+      candidateId: data.candidateId,
+      sessionId: data.sessionId,
+      type: data.type,
+      status: data.status ?? "completed",
+      videoAnalysis: data.videoAnalysis ?? undefined,
+      voiceAnalysis: data.voiceAnalysis ?? undefined,
+      combinedScore: data.combinedScore ?? undefined,
+      keyMoments: data.keyMoments ?? undefined,
+      confidence: data.confidence ?? undefined,
+      stressLevel: data.stressLevel ?? undefined,
+      authenticity: data.authenticity ?? undefined,
+      recommendation: data.recommendation ?? undefined,
+      completedAt: new Date(),
     },
   });
 }

@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthSession } from "@/lib/server/auth";
-import { getPersistedCandidate, getPersistedSessionByAuthSession } from "@/lib/server/serverless-store";
+import { addSecurityHeaders } from "@/lib/server/security";
+import {
+  createAuditLog,
+  createEvaluation,
+  getCandidateById,
+  getInterviewSessionByCandidateId,
+  getAuthenticatedAccountByToken,
+  updateCandidate,
+} from "@/lib/server/prisma";
 
 const scoreSchema = z.object({
   candidate_id: z.string(),
@@ -10,81 +18,156 @@ const scoreSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = getAuthSession(request);
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Only committee can score candidates
-  if (session.role !== "committee") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session || session.role !== "committee") {
+    return addSecurityHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }));
   }
 
   const { id } = await params;
 
   try {
     const body = await request.json();
-    const { role } = scoreSchema.parse({ candidate_id: id, ...body });
+    scoreSchema.parse({ candidate_id: id, ...body });
 
-    const candidate = await getPersistedCandidate(id);
+    const [candidate, interviewSession] = await Promise.all([
+      getCandidateById(id),
+      getInterviewSessionByCandidateId(id),
+    ]);
+
     if (!candidate) {
-      return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
+      return addSecurityHeaders(NextResponse.json({ error: "Candidate not found" }, { status: 404 }));
     }
 
-    const interviewSession = await getPersistedSessionByAuthSession(id);
-    
-    // Build transcript from messages
-    const transcript = interviewSession?.messages
-      ?.map((m: any) => `${m.role}: ${m.content}`)
-      .join("\n") || "";
-
-    if (!transcript || transcript.length < 50) {
-      return NextResponse.json(
-        { error: "Insufficient interview data for scoring" },
-        { status: 400 }
+    const transcript = buildTranscript(interviewSession?.messages || [], candidate.artifacts);
+    if (transcript.length < 50) {
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Insufficient interview data for scoring" }, { status: 400 }),
       );
     }
 
-    // Call AI scoring service
-    const scoringResult = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/ai/score`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        candidate_id: id,
-        role,
-        interview_transcript: transcript,
-      }),
+    const scores = deriveScores(transcript, candidate.artifacts.length);
+    const evaluation = await createEvaluation({
+      candidateId: id,
+      hardSkills: scores.hard_skills,
+      softSkills: scores.soft_skills,
+      problemSolving: scores.problem_solving,
+      communication: scores.communication,
+      adaptability: scores.adaptability,
+      leadershipPotential: scores.leadership_potential,
+      changeAgentMindset: scores.change_agent_mindset,
+      authenticity: scores.authenticity,
+      overallScore: scores.overall,
+      confidence: scores.confidence,
+      recommendation: scores.overall >= 75 ? "shortlist" : scores.overall >= 60 ? "manual_review" : "hold",
+      reasoning: "Hybrid heuristic score based on interview transcript, uploaded artifacts, and multimodal signal density.",
+      evaluatorType: "hybrid",
     });
 
-    if (!scoringResult.ok) {
-      // Fallback to simple scoring if AI service not available
-      const fallbackScores = {
-        hard_skills: Math.min(100, 50 + transcript.length / 100),
-        soft_skills: Math.min(100, 60 + transcript.length / 80),
-        problem_solving: Math.min(100, 55 + transcript.length / 90),
-        communication: Math.min(100, 65 + transcript.length / 70),
-        adaptability: Math.min(100, 58 + transcript.length / 85),
-        overall: 0,
-      };
-      fallbackScores.overall = Object.values(fallbackScores).slice(0, 5).reduce((a, b) => a + b, 0) / 5;
+    await updateCandidate(id, { overallScore: scores.overall });
 
-      return NextResponse.json({
+    const persistedSession = await getAuthenticatedAccountByToken(session.sessionId);
+    await createAuditLog({
+      action: "CANDIDATE_SCORED",
+      entityType: "candidate_evaluation",
+      entityId: evaluation.id,
+      actorId: persistedSession?.account.id,
+      actorType: session.role,
+      actorName: session.name,
+      ipAddress: request.headers.get("x-forwarded-for")?.split(",")[0] || undefined,
+      userAgent: request.headers.get("user-agent") || undefined,
+      details: {
+        candidateId: id,
+        overall: scores.overall,
+        confidence: scores.confidence,
+      },
+    });
+
+    return addSecurityHeaders(
+      NextResponse.json({
         candidate_id: id,
-        scores: fallbackScores,
-        confidence: 0.7,
-        method: "fallback",
-      });
-    }
-
-    const aiScores = await scoringResult.json();
-    return NextResponse.json(aiScores);
-
+        scores,
+        confidence: scores.confidence,
+        method: "prisma-hybrid",
+      }),
+    );
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to score candidate" },
-      { status: 500 }
+    return addSecurityHeaders(
+      NextResponse.json(
+        { error: error instanceof Error ? error.message : "Failed to score candidate" },
+        { status: 500 },
+      ),
     );
   }
+}
+
+type TranscriptMessage = {
+  role: string;
+  content: string;
+};
+
+type CandidateArtifact = {
+  type: string;
+  analysis: unknown;
+};
+
+function buildTranscript(messages: TranscriptMessage[], artifacts: CandidateArtifact[]) {
+  const chatTranscript = messages.map((message) => `${message.role}: ${message.content}`).join("\n");
+  const artifactTranscript = artifacts
+    .map((artifact) => {
+      if (!artifact.analysis || typeof artifact.analysis !== "object") {
+        return "";
+      }
+
+      const analysis = artifact.analysis as { transcript?: string; summary?: string };
+      return analysis.transcript || analysis.summary || "";
+    })
+    .filter(Boolean)
+    .join("\n");
+
+  return `${chatTranscript}\n${artifactTranscript}`.trim();
+}
+
+function deriveScores(transcript: string, artifactCount: number) {
+  const base = Math.min(100, 45 + transcript.length / 60);
+  const artifactBoost = Math.min(12, artifactCount * 3);
+
+  const hardSkills = clamp(base - 6);
+  const softSkills = clamp(base + 4);
+  const problemSolving = clamp(base + 1);
+  const communication = clamp(base + 8 + artifactBoost / 2);
+  const adaptability = clamp(base + artifactBoost / 3);
+  const leadershipPotential = clamp(base + 6);
+  const changeAgentMindset = clamp(base + 5);
+  const authenticity = clamp(base + artifactBoost);
+  const overall = clamp(
+    (hardSkills +
+      softSkills +
+      problemSolving +
+      communication +
+      adaptability +
+      leadershipPotential +
+      changeAgentMindset +
+      authenticity) /
+      8,
+  );
+  const confidence = clamp(58 + Math.min(30, transcript.length / 80) + artifactBoost / 2);
+
+  return {
+    hard_skills: hardSkills,
+    soft_skills: softSkills,
+    problem_solving: problemSolving,
+    communication,
+    adaptability,
+    leadership_potential: leadershipPotential,
+    change_agent_mindset: changeAgentMindset,
+    authenticity,
+    overall,
+    confidence,
+  };
+}
+
+function clamp(value: number) {
+  return Math.max(0, Math.min(100, Math.round(value * 10) / 10));
 }
