@@ -27,9 +27,15 @@ export function RegisterEntry() {
   const [role, setRole] = useState<Role>("candidate");
   const [candidate, setCandidate] = useState(defaultCandidate);
   const [committee, setCommittee] = useState(defaultCommittee);
+  const [accepted, setAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async () => {
+    if (!accepted) {
+      toast.error("Подтверди согласие с политикой конфиденциальности и условиями.");
+      return;
+    }
+
     setSubmitting(true);
     const payload = role === "candidate" ? { role, ...candidate } : { role, ...committee };
     const response = await fetch("/api/auth/register", {
@@ -76,14 +82,26 @@ export function RegisterEntry() {
       {role === "candidate" ? (
         <div className="space-y-4">
           <Field label="Полное имя">
-            <input value={candidate.name} onChange={(event) => setCandidate((current) => ({ ...current, name: event.target.value }))} className="auth-input" />
+            <input
+              value={candidate.name}
+              onChange={(event) => setCandidate((current) => ({ ...current, name: event.target.value }))}
+              className="auth-input"
+            />
           </Field>
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Номер телефона KZ">
-              <input value={candidate.phone} onChange={(event) => setCandidate((current) => ({ ...current, phone: event.target.value }))} className="auth-input" />
+              <input
+                value={candidate.phone}
+                onChange={(event) => setCandidate((current) => ({ ...current, phone: event.target.value }))}
+                className="auth-input"
+              />
             </Field>
             <Field label="Email">
-              <input value={candidate.email} onChange={(event) => setCandidate((current) => ({ ...current, email: event.target.value }))} className="auth-input" />
+              <input
+                value={candidate.email}
+                onChange={(event) => setCandidate((current) => ({ ...current, email: event.target.value }))}
+                className="auth-input"
+              />
             </Field>
           </div>
           <Field label="Пароль">
@@ -98,10 +116,18 @@ export function RegisterEntry() {
       ) : (
         <div className="space-y-4">
           <Field label="Имя участника комиссии">
-            <input value={committee.name} onChange={(event) => setCommittee((current) => ({ ...current, name: event.target.value }))} className="auth-input" />
+            <input
+              value={committee.name}
+              onChange={(event) => setCommittee((current) => ({ ...current, name: event.target.value }))}
+              className="auth-input"
+            />
           </Field>
           <Field label="Рабочий email">
-            <input value={committee.email} onChange={(event) => setCommittee((current) => ({ ...current, email: event.target.value }))} className="auth-input" />
+            <input
+              value={committee.email}
+              onChange={(event) => setCommittee((current) => ({ ...current, email: event.target.value }))}
+              className="auth-input"
+            />
           </Field>
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Пароль">
@@ -123,6 +149,26 @@ export function RegisterEntry() {
           </div>
         </div>
       )}
+
+      <label className="flex items-start gap-3 rounded-[18px] border border-white/8 bg-bg-elevated/60 px-4 py-3 text-sm text-text-secondary">
+        <input
+          type="checkbox"
+          checked={accepted}
+          onChange={(event) => setAccepted(event.target.checked)}
+          className="mt-1 h-4 w-4 rounded border-white/15 bg-transparent accent-brand-green"
+        />
+        <span className="leading-relaxed">
+          Я подтверждаю согласие с{" "}
+          <Link href="/privacy-policy" className="text-brand-green hover:text-brand-dim">
+            политикой конфиденциальности
+          </Link>{" "}
+          и{" "}
+          <Link href="/terms" className="text-brand-green hover:text-brand-dim">
+            условиями использования
+          </Link>
+          .
+        </span>
+      </label>
 
       <button
         type="button"

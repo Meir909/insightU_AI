@@ -142,11 +142,19 @@ Respond in JSON format:
 
     const contentResult = JSON.parse(contentResponse.choices[0].message.content || "{}");
 
-    // Step 3: Calculate visual metrics (simulated for MVP - in production use computer vision)
-    // For MVP, we estimate based on audio confidence and content
-    const estimatedVisualConfidence = Math.max(0, Math.min(100, 
-      contentResult.confidenceScore + (Math.random() * 20 - 10)
-    ));
+    // Step 3: Derive visual confidence deterministically from available multimodal evidence.
+    const estimatedVisualConfidence = Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(
+          (Number(contentResult.confidenceScore || 0) * 0.5 +
+            Number(audioAnalysis.scores.confidence || 0) * 0.3 +
+            Number(audioAnalysis.scores.clarity || 0) * 0.2) *
+            10,
+        ) / 10,
+      ),
+    );
 
     return {
       transcript: audioAnalysis.transcript,

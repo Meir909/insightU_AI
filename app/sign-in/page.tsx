@@ -16,19 +16,28 @@ export default function SignInPage() {
           </div>
 
           <div className="max-w-3xl space-y-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-text-muted">Sign in</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-text-muted">Secure sign in</p>
             <h1 className="text-5xl font-black leading-[0.94] tracking-[-0.05em] text-white md:text-7xl">
-              Вход в
-              <span className="block text-brand-green">личный кабинет</span>
+              Безопасный вход
+              <span className="block text-brand-green">в личный кабинет</span>
             </h1>
             <p className="max-w-2xl text-base leading-relaxed text-text-secondary md:text-lg">
-              Кандидат получает личный кабинет и доступ к интервью, комиссия — персональный рабочий кабинет review.
+              Кандидат получает доступ к интервью и своему кабинету. Комиссия получает отдельный защищённый
+              рабочий кабинет для review, explainability и коллективного голосования.
             </p>
           </div>
 
-          <Link href="/sign-up" className="inline-flex text-sm text-text-secondary hover:text-white">
-            Нет аккаунта? Создать новый →
-          </Link>
+          <div className="flex flex-wrap gap-4 text-sm text-text-secondary">
+            <Link href="/sign-up" className="hover:text-white">
+              Нет аккаунта? Создать новый →
+            </Link>
+            <Link href="/privacy-policy" className="hover:text-white">
+              Политика конфиденциальности
+            </Link>
+            <Link href="/terms" className="hover:text-white">
+              Условия использования
+            </Link>
+          </div>
         </section>
 
         <section className="panel-soft grain p-6 shadow-2xl shadow-black/25 md:p-8">
@@ -37,8 +46,10 @@ export default function SignInPage() {
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div className="space-y-1">
-              <p className="text-lg font-black tracking-tight text-white">Вход</p>
-              <p className="text-sm leading-relaxed text-text-muted">Используйте данные своего аккаунта.</p>
+              <p className="text-lg font-black tracking-tight text-white">Официальный вход</p>
+              <p className="text-sm leading-relaxed text-text-muted">
+                Сессия защищена cookie, доступ в кабинет комиссии ограничен ролью и audit trail.
+              </p>
             </div>
           </div>
           <LoginEntry />

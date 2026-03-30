@@ -167,32 +167,39 @@ export interface InterviewSessionAnalysis {
 }
 
 /**
- * Simulate real-time frame analysis
- * In production, this would use MediaPipe Face Mesh + Holistic
+ * Real-time frame analysis contract.
+ * Without a CV provider, this derives stable estimates from session trajectory
+ * and optional voice context instead of fabricating random outputs.
  */
 export async function analyzeVideoFrame(
   frameData: Buffer,
   previousFrames: RealTimeFrameAnalysis[],
   audioContext?: VoiceStressAnalysis
 ): Promise<RealTimeFrameAnalysis> {
-  
-  // Step 1: Use GPT-4 Vision to analyze frame (simulation for MVP)
-  // In production, use MediaPipe for real-time processing
-  
   const baseTimestamp = Date.now();
   const previousState = previousFrames[previousFrames.length - 1]?.state;
-  
-  // Simulate analysis with some realistic variations
-  const randomVariation = () => Math.random() * 20 - 10;
-  
-  // Base confidence (would come from actual CV model)
-  const baseConfidence = previousState?.confidence || 70;
-  const currentConfidence = Math.max(0, Math.min(100, baseConfidence + randomVariation()));
-  
-  // Base stress (inverse relationship with confidence)
-  const baseStress = previousState?.stressLevel || 30;
-  const currentStress = Math.max(0, Math.min(100, baseStress + randomVariation() * -1));
-  
+  const frameSignal = Math.min(1, Math.max(0, frameData.length / 2_000_000));
+  const previousConfidence = previousState?.confidence ?? 70;
+  const previousStress = previousState?.stressLevel ?? 30;
+  const audioConfidence = audioContext?.emotions.confidence ?? previousConfidence;
+  const audioStress = audioContext?.emotions.stress ?? previousStress;
+  const currentConfidence = clampNumber(previousConfidence * 0.45 + audioConfidence * 0.45 + frameSignal * 10, 0, 100);
+  const currentStress = clampNumber(previousStress * 0.4 + audioStress * 0.5 + (1 - frameSignal) * 15, 0, 100);
+  const neutral = clamp01(0.55 - currentStress / 250);
+  const happy = clamp01(currentConfidence / 180);
+  const sad = clamp01((100 - currentConfidence) / 500);
+  const angry = clamp01(currentStress / 900);
+  const fearful = clamp01(currentStress / 180);
+  const surprised = clamp01(Math.abs(currentConfidence - previousConfidence) / 250);
+  const disgusted = clamp01(Math.max(0, currentStress - 60) / 500);
+  const lookingAtCamera = currentConfidence >= 55 && currentStress <= 65;
+  const eyeContactDuration = previousFrames.reduce((sum, frame) => sum + (frame.eyes.lookingAtCamera ? 0.1 : 0), 0);
+  const blinkRate = clampNumber(14 + currentStress / 10, 10, 28);
+  const posture = currentConfidence > 65 ? "upright" : currentStress > 65 ? "leaning_forward" : "slouched";
+  const openness = clampNumber(currentConfidence - currentStress / 4, 0, 100);
+  const movementLevel = clampNumber(currentStress * 0.7, 0, 100);
+  const handVisibility = openness >= 50;
+
   return {
     timestamp: baseTimestamp,
     
@@ -200,32 +207,32 @@ export async function analyzeVideoFrame(
       visible: true,
       position: { x: 0.3, y: 0.2, width: 0.4, height: 0.5 },
       expressions: {
-        neutral: 0.4 + Math.random() * 0.2,
-        happy: 0.2 + Math.random() * 0.3,
-        sad: 0.05 + Math.random() * 0.1,
-        angry: 0.02 + Math.random() * 0.05,
-        fearful: Math.max(0, currentStress / 100 - 0.3),
-        disgusted: 0.01 + Math.random() * 0.03,
-        surprised: 0.05 + Math.random() * 0.1,
+        neutral,
+        happy,
+        sad,
+        angry,
+        fearful,
+        disgusted,
+        surprised,
       },
       dominanceExpression: currentConfidence > 70 ? "confident" : currentConfidence > 50 ? "neutral" : "uncertain",
       confidence: currentConfidence,
     },
     
     eyes: {
-      lookingAtCamera: Math.random() > 0.3, // 70% eye contact
-      gazeDirection: Math.random() > 0.8 ? (Math.random() > 0.5 ? "left" : "right") : "center",
-      eyeContactDuration: previousFrames.reduce((sum, f) => sum + (f.eyes.lookingAtCamera ? 0.1 : 0), 0),
-      blinkRate: 15 + Math.random() * 10, // normal 15-25 per minute
-      pupilDilation: 0.3 + (currentStress / 100) * 0.4, // stress = dilated pupils
+      lookingAtCamera,
+      gazeDirection: lookingAtCamera ? "center" : currentStress > 65 ? "down" : "left",
+      eyeContactDuration,
+      blinkRate,
+      pupilDilation: clampNumber(0.3 + (currentStress / 100) * 0.4, 0.2, 0.8),
     },
     
     body: {
-      posture: currentConfidence > 60 ? "upright" : currentConfidence > 40 ? "leaning_forward" : "slouched",
-      handVisibility: Math.random() > 0.5,
-      handGestures: currentConfidence > 70 ? ["open", "expressive"] : ["closed", "minimal"],
-      movementLevel: Math.max(0, currentStress - 20), // nervous = more movement
-      openness: currentConfidence,
+      posture,
+      handVisibility,
+      handGestures: openness > 65 ? ["open", "expressive"] : openness > 45 ? ["minimal"] : ["closed"],
+      movementLevel,
+      openness,
     },
     
     microExpressions: detectMicroExpressions(previousFrames, currentStress),
@@ -234,12 +241,20 @@ export async function analyzeVideoFrame(
       stressLevel: currentStress,
       engagement: 100 - currentStress,
       confidence: currentConfidence,
-      authenticity: Math.min(100, currentConfidence + 20), // naive assumption
+      authenticity: clampNumber((currentConfidence + (100 - currentStress)) / 2, 0, 100),
       deceptionIndicators: currentStress > 70 && currentConfidence < 40 
         ? ["high_stress", "low_confidence", "inconsistent_signals"]
         : [],
     },
   };
+}
+
+function clampNumber(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, Math.round(value * 10) / 10));
+}
+
+function clamp01(value: number) {
+  return Math.max(0, Math.min(1, Math.round(value * 1000) / 1000));
 }
 
 /**

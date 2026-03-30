@@ -26,7 +26,7 @@ export function LoginEntry() {
     setSubmitting(false);
 
     if (!response.ok) {
-      toast.error(data.error || "Не удалось войти");
+      toast.error(data.error || "Не удалось выполнить вход");
       return;
     }
 
@@ -91,12 +91,25 @@ export function LoginEntry() {
         Войти
       </button>
 
-      <p className="text-sm text-text-secondary">
-        Нет аккаунта?{" "}
-        <Link href="/sign-up" className="text-brand-green hover:text-brand-dim">
-          Создать аккаунт
-        </Link>
-      </p>
+      <div className="space-y-2 text-sm text-text-secondary">
+        <p>
+          Нет аккаунта?{" "}
+          <Link href="/sign-up" className="text-brand-green hover:text-brand-dim">
+            Создать аккаунт
+          </Link>
+        </p>
+        <p className="leading-relaxed">
+          Продолжая вход, вы подтверждаете, что ознакомились с{" "}
+          <Link href="/privacy-policy" className="text-brand-green hover:text-brand-dim">
+            политикой конфиденциальности
+          </Link>{" "}
+          и{" "}
+          <Link href="/terms" className="text-brand-green hover:text-brand-dim">
+            условиями использования
+          </Link>
+          .
+        </p>
+      </div>
     </div>
   );
 }
