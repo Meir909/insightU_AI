@@ -60,7 +60,7 @@ interface Store {
 }
 
 // Use globalThis for cross-request persistence
-function getStore(): Store {
+export function getStore(): Store {
   const g = globalThis as any;
   if (!g.__INSIGHTU_STORE__) {
     g.__INSIGHTU_STORE__ = {
@@ -185,7 +185,9 @@ export async function registerCandidateProfile(input: { authSessionId: string; n
 }
 
 export async function getPersistedCandidate(id: string) {
-  return getStore().candidates.find(c => c.id === id) || null;
+  const store = getStore();
+  const candidate = store.candidates.find((c: Candidate) => c.id === id);
+  return candidate || null;
 }
 
 export async function getPersistedCandidates() {
