@@ -1,11 +1,13 @@
 import { randomUUID } from "crypto";
-import type { ChatAttachment, ChatMessage, InterviewScoreUpdate } from "@/lib/types";
+import type { ChatAttachment, ChatMessage } from "@/lib/types";
 import { getAssistantReply, getInterviewMeta } from "@/lib/server/interviewer";
 import { scoreInterview } from "@/lib/server/interview-scoring";
 import {
-  getOrCreatePersistedEvaluationSession,
-  saveInterviewState,
-} from "@/lib/server/persistent-store";
+  addInterviewMessage,
+  getCandidateByAccountId,
+  getInterviewSessionByCandidateId,
+  updateInterviewProgress,
+} from "@/lib/server/prisma";
 
 type SessionState = {
   sessionId: string;
@@ -14,12 +16,10 @@ type SessionState = {
   messages: ChatMessage[];
   progress: number;
   status: "active" | "completed";
-  scoreUpdate: InterviewScoreUpdate | null;
+  scoreUpdate: ReturnType<typeof scoreInterview> | null;
   phase: string;
   artifacts: ChatAttachment[];
 };
-
-const sessions = new Map<string, SessionState>();
 
 const makeMessage = (role: "assistant" | "user", content: string, attachments?: ChatAttachment[]): ChatMessage => ({
   id: randomUUID(),
@@ -40,52 +40,78 @@ const seedMessages = (): ChatMessage[] => [
   ),
 ];
 
-const summarizeAttachments = (attachments: ChatAttachment[]) =>
-  attachments
+function summarizeAttachments(attachments: ChatAttachment[]) {
+  return attachments
     .map((item) => `${item.kind}: ${item.name}${item.transcript ? ` | ${item.transcript}` : ""}`)
     .join("\n");
+}
 
-export async function getOrCreateSession(sessionId: string, userId: string, candidateName = "Candidate") {
-  const existing = sessions.get(sessionId);
-  if (existing) {
-    if (existing.userId !== userId) {
-      throw new Error("Session does not belong to this user.");
-    }
-    return existing;
+async function loadArtifacts(candidateId: string): Promise<ChatAttachment[]> {
+  const candidate = await getCandidateByAccountId(candidateId);
+  if (!candidate) {
+    return [];
   }
 
-  const persisted = await getOrCreatePersistedEvaluationSession(userId, candidateName);
-  const messages = persisted.messages.length > 0 ? persisted.messages : seedMessages();
-  const scoreUpdate = "score_update" in persisted ? persisted.score_update : persisted.scoreUpdate;
+  return candidate.artifacts.map((artifact) => {
+    const analysis =
+      artifact.analysis && typeof artifact.analysis === "object"
+        ? (artifact.analysis as { transcript?: string; keyPoints?: string[] })
+        : undefined;
 
-  const session: SessionState = {
-    sessionId,
+    return {
+      id: artifact.id,
+      kind: artifact.type === "image" ? "document" : (artifact.type as ChatAttachment["kind"]),
+      name: artifact.name,
+      mimeType: artifact.mimeType || "application/octet-stream",
+      sizeKb: Math.max(1, Math.round(artifact.size / 1024)),
+      status: "ready",
+      transcript: analysis?.transcript,
+      extractedSignals: analysis?.keyPoints || [],
+      storagePath: artifact.url,
+    };
+  });
+}
+
+export async function getOrCreateSession(_requestedSessionId: string, userId: string, candidateName = "Candidate") {
+  const candidate = await getCandidateByAccountId(userId);
+  if (!candidate) {
+    throw new Error("Candidate profile not found for this session.");
+  }
+
+  const persisted = await getInterviewSessionByCandidateId(candidate.id);
+  if (!persisted) {
+    throw new Error("Interview session not initialized for candidate.");
+  }
+
+  let messages: ChatMessage[] = persisted.messages.map((message) => ({
+    id: message.id,
+    role: message.role === "system" ? "assistant" : message.role,
+    content: message.content,
+    createdAt: message.createdAt.toISOString(),
+  }));
+
+  if (messages.length === 0) {
+    messages = seedMessages();
+    for (const message of messages) {
+      await addInterviewMessage({
+        sessionId: persisted.id,
+        role: message.role,
+        content: message.content,
+      });
+    }
+  }
+
+  return {
+    sessionId: persisted.id,
     userId,
-    candidateName,
+    candidateName: candidate.fullName || candidateName,
     messages,
     progress: persisted.progress,
-    status: persisted.status,
-    scoreUpdate,
+    status: persisted.status === "completed" ? "completed" : "active",
+    scoreUpdate: persisted.messages.findLast((item) => item.scoreUpdate)?.scoreUpdate as ReturnType<typeof scoreInterview> | null,
     phase: persisted.phase,
-    artifacts: persisted.artifacts,
-  };
-
-  sessions.set(sessionId, session);
-
-  if (persisted.messages.length === 0) {
-    await saveInterviewState({
-      authSessionId: userId,
-      candidateName,
-      messages,
-      artifacts: session.artifacts,
-      progress: session.progress,
-      status: session.status,
-      phase: session.phase,
-      scoreUpdate: session.scoreUpdate,
-    });
-  }
-
-  return session;
+    artifacts: await loadArtifacts(userId),
+  } satisfies SessionState;
 }
 
 export async function appendUserMessage(
@@ -96,44 +122,53 @@ export async function appendUserMessage(
   attachments: ChatAttachment[] = [],
 ) {
   const session = await getOrCreateSession(sessionId, userId, candidateName);
-  session.candidateName = candidateName;
-  session.artifacts.push(...attachments);
-
   const contentWithArtifacts =
-    attachments.length > 0
-      ? `${content}\n\n[Attached evidence]\n${summarizeAttachments(attachments)}`
-      : content;
+    attachments.length > 0 ? `${content}\n\n[Attached evidence]\n${summarizeAttachments(attachments)}` : content;
 
-  session.messages.push(makeMessage("user", contentWithArtifacts, attachments));
-
-  const userMessages = session.messages
-    .filter((message) => message.role === "user")
-    .map((message) => message.content);
-  session.scoreUpdate = scoreInterview(userMessages, session.artifacts);
-
-  const assistant = await getAssistantReply(session.messages);
-  session.messages.push(makeMessage("assistant", assistant.reply));
-  session.progress = assistant.progress;
-  session.status = assistant.completed ? "completed" : "active";
-  session.phase = getInterviewMeta(userMessages.length);
-
-  await saveInterviewState({
-    authSessionId: userId,
-    candidateName: session.candidateName,
-    messages: session.messages,
-    artifacts: session.artifacts,
-    progress: session.progress,
-    status: session.status,
-    phase: session.phase,
-    scoreUpdate: session.scoreUpdate,
+  await addInterviewMessage({
+    sessionId: session.sessionId,
+    role: "user",
+    content: contentWithArtifacts,
+    scoreUpdate: null,
   });
+
+  const userMessages = [...session.messages.filter((message) => message.role === "user").map((message) => message.content), contentWithArtifacts];
+  const allArtifacts = [...session.artifacts, ...attachments];
+  const scoreUpdate = scoreInterview(userMessages, allArtifacts);
+
+  const assistant = await getAssistantReply([
+    ...session.messages,
+    makeMessage("user", contentWithArtifacts, attachments),
+  ]);
+
+  await addInterviewMessage({
+    sessionId: session.sessionId,
+    role: "assistant",
+    content: assistant.reply,
+    scoreUpdate,
+  });
+
+  await updateInterviewProgress(session.sessionId, assistant.progress, getInterviewMeta(userMessages.length), {
+    cognitiveScore: scoreUpdate.cognitive,
+    leadershipScore: scoreUpdate.leadership,
+    growthScore: scoreUpdate.growth,
+    decisionScore: scoreUpdate.decision,
+    motivationScore: scoreUpdate.motivation,
+    authenticityScore: scoreUpdate.authenticity,
+    confidenceScore: scoreUpdate.confidence * 100,
+    aiRiskScore: scoreUpdate.ai_detection_prob * 100,
+    status: assistant.completed ? "completed" : "active",
+  });
+
+  const refreshed = await getOrCreateSession(session.sessionId, userId, session.candidateName);
 
   return {
     reply: assistant.reply,
-    progress: session.progress,
-    status: session.status,
-    score_update: session.scoreUpdate,
-    messages: session.messages,
-    phase: session.phase,
+    progress: assistant.progress,
+    status: assistant.completed ? "completed" : "active",
+    score_update: scoreUpdate,
+    messages: refreshed.messages,
+    phase: getInterviewMeta(userMessages.length),
+    session_id: session.sessionId,
   };
 }

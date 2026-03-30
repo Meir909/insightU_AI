@@ -11,7 +11,9 @@ import {
   HeadObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { mkdir, writeFile } from 'fs/promises';
 import { nanoid } from 'nanoid';
+import path from 'path';
 
 // ============================================================================
 // S3 CLIENT CONFIGURATION
@@ -27,6 +29,19 @@ const s3Client = new S3Client({
 
 const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'invisionu-uploads';
 const S3_PREFIX = process.env.S3_PREFIX || 'production';
+const LOCAL_UPLOADS_DIR = path.join(process.cwd(), '.uploads');
+
+async function saveLocalUpload(file: Buffer | Uint8Array, originalName: string, type: string, candidateId: string) {
+  await mkdir(LOCAL_UPLOADS_DIR, { recursive: true });
+  const extension = originalName.split('.').pop() || 'bin';
+  const key = `${type}-${candidateId}-${nanoid()}-${Date.now()}.${extension}`;
+  const filePath = path.join(LOCAL_UPLOADS_DIR, key);
+  await writeFile(filePath, file);
+  return {
+    key,
+    url: filePath,
+  };
+}
 
 // ============================================================================
 // UPLOAD CONFIGURATION
@@ -121,16 +136,13 @@ export async function uploadFile(
   type: 'resumes' | 'videos' | 'audio' | 'documents' | 'portfolios'
 ): Promise<UploadResult> {
   try {
-    // Check if S3 is configured
     if (!process.env.AWS_ACCESS_KEY_ID || !process.env.S3_BUCKET_NAME) {
-      console.warn('[S3] S3 not configured, using mock upload');
-      
-      // Return mock URL for development
-      const mockKey = `${S3_PREFIX}/${type}/${candidateId}/${nanoid()}-${originalName}`;
+      console.warn('[S3] S3 not configured, using local storage');
+      const local = await saveLocalUpload(file, originalName, type, candidateId);
       return {
         success: true,
-        url: `https://mock-s3.invisionu.kz/${mockKey}`,
-        key: mockKey,
+        url: local.url,
+        key: local.key,
         size: file.length,
         mimeType,
       };
@@ -190,8 +202,7 @@ export async function getSignedDownloadUrl(
 ): Promise<string | null> {
   try {
     if (!process.env.AWS_ACCESS_KEY_ID) {
-      console.warn('[S3] S3 not configured, returning mock URL');
-      return `https://mock-s3.invisionu.kz/${key}`;
+      return key;
     }
 
     const command = new GetObjectCommand({
@@ -239,7 +250,6 @@ export async function getFileMetadata(key: string) {
 export async function deleteFile(key: string): Promise<boolean> {
   try {
     if (!process.env.AWS_ACCESS_KEY_ID) {
-      console.warn('[S3] S3 not configured, mock delete');
       return true;
     }
 
@@ -312,7 +322,6 @@ export async function uploadPortfolio(
 
 export async function deleteCandidateFiles(candidateId: string): Promise<number> {
   if (!process.env.AWS_ACCESS_KEY_ID) {
-    console.warn('[S3] S3 not configured, mock batch delete');
     return 0;
   }
 
