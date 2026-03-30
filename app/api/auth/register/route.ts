@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { envFlags } from "@/lib/env";
 import { registerCandidateAccount, registerCommitteeAccount } from "@/lib/server/account-store";
-import { backendFetch } from "@/lib/server/backend-client";
 import { applyAuthCookies, type AuthSession } from "@/lib/server/auth";
 import { hashPassword } from "@/lib/server/password";
+import { addSecurityHeaders, sanitizeObject } from "@/lib/server/security";
+import { createAuditLog } from "@/lib/server/prisma";
 
 const committeeAccessKey = process.env.COMMITTEE_ACCESS_KEY || "committee-demo";
 
@@ -26,68 +26,14 @@ const committeeSchema = z.object({
 
 const registerSchema = z.discriminatedUnion("role", [candidateSchema, committeeSchema]);
 
-type BackendAuthResponse = {
-  account: {
-    role: AuthSession["role"];
-    name: string;
-    email?: string | null;
-    phone?: string | null;
-    entity_id: string;
-  };
-  session: { token: string };
-};
-
 export async function POST(request: NextRequest) {
-  const payload = registerSchema.parse(await request.json());
-
-  if (envFlags.backend) {
-    try {
-      const endpoint =
-        payload.role === "committee" ? "/api/v1/auth/register/committee" : "/api/v1/auth/register/candidate";
-      const backendPayload =
-        payload.role === "committee"
-          ? {
-              role: payload.role,
-              name: payload.name.trim(),
-              email: payload.email.trim(),
-              password: payload.password,
-              access_key: payload.accessKey,
-            }
-          : {
-              role: payload.role,
-              name: payload.name.trim(),
-              email: payload.email?.trim() || null,
-              phone: payload.phone.trim(),
-              password: payload.password,
-            };
-
-      const data = await backendFetch<BackendAuthResponse>(endpoint, {
-        method: "POST",
-        body: JSON.stringify(backendPayload),
-      });
-
-      const session: AuthSession = {
-        sessionId: data.session.token,
-        role: data.account.role,
-        name: data.account.name,
-        email: data.account.email ?? undefined,
-        phone: data.account.phone ?? undefined,
-        entityId: data.account.entity_id,
-      };
-
-      const redirectTo = session.role === "committee" ? "/dashboard/account" : "/account";
-      const response = NextResponse.json({ ok: true, redirectTo, session });
-      return applyAuthCookies(response, session);
-    } catch (error) {
-      return NextResponse.json(
-        { error: error instanceof Error ? error.message : "Failed to register via backend" },
-        { status: 400 },
-      );
-    }
-  }
+  const rawPayload = registerSchema.parse(await request.json());
+  const payload = sanitizeObject(rawPayload) as z.infer<typeof registerSchema>;
 
   if (payload.role === "committee" && payload.accessKey !== committeeAccessKey) {
-    return NextResponse.json({ error: "Invalid committee access key" }, { status: 401 });
+    return addSecurityHeaders(
+      NextResponse.json({ error: "Invalid committee access key" }, { status: 401 }),
+    );
   }
 
   try {
@@ -117,11 +63,30 @@ export async function POST(request: NextRequest) {
 
     const redirectTo = account.role === "committee" ? "/dashboard/account" : "/account";
     const response = NextResponse.json({ ok: true, redirectTo, session });
-    return applyAuthCookies(response, session);
+
+    await createAuditLog({
+      action: "AUTH_REGISTER",
+      entityType: "account",
+      entityId: session.entityId || account.id,
+      actorId: account.id,
+      actorType: account.role,
+      actorName: account.name,
+      ipAddress: request.headers.get("x-forwarded-for")?.split(",")[0] || undefined,
+      userAgent: request.headers.get("user-agent") || undefined,
+      details: {
+        role: account.role,
+        email: account.email,
+        phone: account.phone,
+      },
+    });
+
+    return addSecurityHeaders(applyAuthCookies(response, session));
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to register account" },
-      { status: 400 },
+    return addSecurityHeaders(
+      NextResponse.json(
+        { error: error instanceof Error ? error.message : "Failed to register account" },
+        { status: 400 },
+      ),
     );
   }
 }

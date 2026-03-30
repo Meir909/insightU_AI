@@ -1,32 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/server/auth";
-import { findAccountById } from "@/lib/server/serverless-store";
-import { getCandidateAccountOverview } from "@/lib/server/account-store";
+import { findAccountBySessionToken, getCandidateAccountOverview, getCommitteeAccountOverview } from "@/lib/server/account-store";
+import { addSecurityHeaders } from "@/lib/server/security";
 
 export async function GET(request: NextRequest) {
   const session = getAuthSession(request);
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return addSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
   try {
-    // Get own profile
     if (session.role === "candidate") {
       const overview = await getCandidateAccountOverview(session.sessionId);
       if (!overview) {
-        return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+        return addSecurityHeaders(NextResponse.json({ error: "Profile not found" }, { status: 404 }));
       }
-      return NextResponse.json(overview);
+      return addSecurityHeaders(NextResponse.json(overview));
     }
 
-    // Committee members get their own overview
-    return NextResponse.json({
-      account: await findAccountById(session.sessionId),
-    });
+    const [account, overview] = await Promise.all([
+      findAccountBySessionToken(session.sessionId),
+      getCommitteeAccountOverview(session.sessionId),
+    ]);
+
+    return addSecurityHeaders(
+      NextResponse.json({
+        account,
+        overview,
+      }),
+    );
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch profile" },
-      { status: 500 }
+    return addSecurityHeaders(
+      NextResponse.json(
+        { error: error instanceof Error ? error.message : "Failed to fetch profile" },
+        { status: 500 }
+      ),
     );
   }
 }

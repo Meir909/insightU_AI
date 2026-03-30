@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { randomUUID } from "crypto";
 import { getAuthSession } from "@/lib/server/auth";
-import { getStore } from "@/lib/server/serverless-store";
+import { getCandidateApplicationOverview } from "@/lib/server/account-store";
+import {
+  getAllCandidates,
+  getAuthenticatedAccountByToken,
+  submitCandidateApplication,
+} from "@/lib/server/prisma";
+import { addSecurityHeaders, sanitizeObject } from "@/lib/server/security";
 
 const applicationSchema = z.object({
   // Personal info
@@ -60,103 +65,78 @@ const applicationSchema = z.object({
 export async function POST(request: NextRequest) {
   const session = getAuthSession(request);
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return addSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
   // Only candidates can submit applications
   if (session.role !== "candidate") {
-    return NextResponse.json({ error: "Only candidates can submit applications" }, { status: 403 });
+    return addSecurityHeaders(
+      NextResponse.json({ error: "Only candidates can submit applications" }, { status: 403 }),
+    );
   }
 
   try {
-    const body = await request.json();
+    const body = sanitizeObject(await request.json()) as Record<string, unknown>;
     const application = applicationSchema.parse(body);
+    const persistedSession = await getAuthenticatedAccountByToken(session.sessionId);
 
-    const store = getStore();
-    
-    // Find or create candidate record
-    let candidate = store.candidates.find((c: any) => c.email?.toLowerCase() === application.email.toLowerCase());
-    
-    if (!candidate) {
-      // Create new candidate from application
-      candidate = {
-        id: session.entityId,
-        code: `IU-${String(store.candidates.length + 2401).padStart(4, '0')}`,
-        name: application.fullName,
-        email: application.email,
-        phone: application.phone,
-        city: application.city,
-        program: 'inVision U Applicant',
-        goals: application.motivation.goals,
-        experience: application.leadershipDescription || application.teamExperienceDescription || 'No experience provided',
-        motivationText: application.motivation.whyVisionU,
-        essayExcerpt: application.motivation.changeAgentVision,
-        status: 'completed',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as any;
-      
-      store.candidates.push(candidate!);
-    } else {
-      // Update existing candidate
-      const c = candidate as any;
-      c.name = application.fullName;
-      c.city = application.city;
-      c.goals = application.motivation.goals;
-      c.experience = application.leadershipDescription || application.teamExperienceDescription || c.experience;
-      c.motivationText = application.motivation.whyVisionU;
-      c.essayExcerpt = application.motivation.changeAgentVision;
-      c.status = "completed";
-      c.updatedAt = new Date().toISOString();
-      // Extended fields
-      c.dateOfBirth = application.dateOfBirth;
-      c.educationLevel = application.educationLevel;
-      c.schoolName = application.schoolName;
-      c.graduationYear = application.graduationYear;
-      c.achievements = application.achievements;
-      c.hasLeadershipExperience = application.hasLeadershipExperience;
-      c.hasTeamExperience = application.hasTeamExperience;
-      c.skills = application.skills;
-      c.languages = application.languages;
-      c.portfolioLinks = application.portfolioLinks;
-      c.howDidYouHear = application.howDidYouHear;
-      c.applicationCompleted = true;
-      c.applicationSubmittedAt = new Date().toISOString();
+    if (!persistedSession?.account.candidate?.id) {
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Candidate session is not linked to a profile" }, { status: 404 }),
+      );
     }
 
-    // Calculate completeness score
     const completenessScore = calculateCompleteness(application);
-    
-    // Calculate formal achievements score
     const formalScore = calculateFormalAchievementsScore(application);
-    
-    // Calculate informal qualities score
     const informalScore = calculateInformalQualitiesScore(application);
+    const overall = Math.round((completenessScore * 0.2 + formalScore * 0.3 + informalScore * 0.5) * 10) / 10;
 
-    return NextResponse.json({
-      success: true,
-      candidateId: (candidate as any).id,
-      code: (candidate as any).code,
+    const candidate = await submitCandidateApplication({
+      candidateId: persistedSession.account.candidate.id,
+      actorId: persistedSession.account.id,
+      actorName: persistedSession.account.name,
+      actorRole: "candidate",
+      payload: application,
       scores: {
         completeness: completenessScore,
         formalAchievements: formalScore,
         informalQualities: informalScore,
-        overall: Math.round((completenessScore * 0.2 + formalScore * 0.3 + informalScore * 0.5) * 10) / 10,
+        overall,
       },
-      nextStep: "interview_scheduled",
-      message: "Application submitted successfully! You will be contacted for an interview.",
+      ipAddress: request.headers.get("x-forwarded-for")?.split(",")[0] || undefined,
+      userAgent: request.headers.get("user-agent") || undefined,
     });
+
+    return addSecurityHeaders(
+      NextResponse.json({
+        success: true,
+        candidateId: candidate.id,
+        code: candidate.code,
+        scores: {
+          completeness: completenessScore,
+          formalAchievements: formalScore,
+          informalQualities: informalScore,
+          overall,
+        },
+        nextStep: "interview_scheduled",
+        message: "Application submitted successfully. The interview and committee review remain in a human-supervised flow.",
+      }),
+    );
 
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation error", details: error.errors },
-        { status: 400 }
+      return addSecurityHeaders(
+        NextResponse.json(
+          { error: "Validation error", details: error.errors },
+          { status: 400 }
+        ),
       );
     }
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to submit application" },
-      { status: 500 }
+    return addSecurityHeaders(
+      NextResponse.json(
+        { error: error instanceof Error ? error.message : "Failed to submit application" },
+        { status: 500 }
+      ),
     );
   }
 }
@@ -164,55 +144,62 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const session = getAuthSession(request);
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return addSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
   try {
-    const store = getStore();
-    
-    // Candidate sees own application
     if (session.role === "candidate") {
-      const candidate = store.candidates.find((c: any) => c.id === session.entityId);
-      if (!candidate) {
-        return NextResponse.json({ error: "Application not found" }, { status: 404 });
+      if (!session.entityId) {
+        return addSecurityHeaders(NextResponse.json({ error: "Application not found" }, { status: 404 }));
       }
-      
-      return NextResponse.json({
-        candidate: {
-          id: candidate.id,
-          code: candidate.code,
-          status: candidate.status,
-          applicationCompleted: (candidate as any).applicationCompleted || false,
-          submittedAt: (candidate as any).applicationSubmittedAt,
-        },
-        canEdit: candidate.status === "in_progress",
-      });
+      const overview = await getCandidateApplicationOverview(session.entityId);
+      if (!overview) {
+        return addSecurityHeaders(NextResponse.json({ error: "Application not found" }, { status: 404 }));
+      }
+
+      return addSecurityHeaders(
+        NextResponse.json({
+          candidate: {
+            id: overview.candidate.id,
+            code: overview.candidate.code,
+            status: overview.candidate.status,
+            applicationCompleted: overview.application.applicationCompleted,
+            submittedAt: overview.application.applicationSubmittedAt,
+          },
+          canEdit: overview.candidate.status === "in_progress",
+        }),
+      );
     }
-    
-    // Committee sees all applications
+
     if (session.role === "committee") {
-      const applications = store.candidates
-        .filter((c: any) => c.applicationCompleted)
-        .map((c: any) => ({
-          id: c.id,
-          code: c.code,
-          name: c.name,
-          email: c.email,
-          city: c.city,
-          status: c.status,
-          educationLevel: (c as any).educationLevel,
-          skills: (c as any).skills,
-          achievements: (c as any).achievements?.length || 0,
-          submittedAt: (c as any).applicationSubmittedAt,
-        }));
-      
-      return NextResponse.json({ applications, count: applications.length });
+      const candidates = await getAllCandidates();
+      const applications = await Promise.all(
+        candidates.map(async (candidate) => {
+          const overview = await getCandidateApplicationOverview(candidate.id);
+          return {
+            id: candidate.id,
+            code: candidate.code,
+            name: candidate.fullName,
+            email: candidate.email,
+            city: candidate.city,
+            status: candidate.status,
+            educationLevel: overview?.application.educationLevel,
+            skills: overview?.application.skills || [],
+            achievements: overview?.application.achievements.length || 0,
+            submittedAt: overview?.application.applicationSubmittedAt,
+          };
+        }),
+      );
+
+      return addSecurityHeaders(NextResponse.json({ applications, count: applications.length }));
     }
 
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch application" },
-      { status: 500 }
+    return addSecurityHeaders(
+      NextResponse.json(
+        { error: error instanceof Error ? error.message : "Failed to fetch application" },
+        { status: 500 }
+      ),
     );
   }
 }

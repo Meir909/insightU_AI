@@ -220,6 +220,16 @@ export function sanitizeString(input: string): string {
 }
 
 export function sanitizeObject(obj: Record<string, any>): Record<string, any> {
+  if (Array.isArray(obj)) {
+    return obj.map((value) =>
+      typeof value === "string"
+        ? sanitizeString(value)
+        : typeof value === "object" && value !== null
+          ? sanitizeObject(value)
+          : value,
+    ) as unknown as Record<string, any>;
+  }
+
   const sanitized: Record<string, any> = {};
   
   for (const [key, value] of Object.entries(obj)) {

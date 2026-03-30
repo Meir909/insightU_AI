@@ -1,20 +1,17 @@
-import { randomUUID } from "crypto";
-import { envFlags } from "@/lib/env";
 import {
-  findAccountById,
-  findAccountForLogin,
-  getPersistedCandidate,
-  getPersistedSessionByAuthSession,
-  registerCandidateProfile,
-  registerCommitteeMember,
-  saveAccount,
-} from "@/lib/server/serverless-store";
-import { getSupabaseAdmin } from "@/lib/server/supabase";
-import type { AuthRole } from "@/lib/server/auth";
+  createAccountSession,
+  createCandidateAccountWithSession,
+  createCommitteeAccountWithSession,
+  getAccountByIdentifier,
+  getAuthenticatedAccountByToken,
+  getCandidateApplicationRecord,
+  getCandidateByAccountId,
+  getCommitteeStats,
+} from "@/lib/server/prisma";
 
 export type AuthAccount = {
   id: string;
-  role: AuthRole;
+  role: "candidate" | "committee";
   name: string;
   email?: string;
   phone?: string;
@@ -26,8 +23,18 @@ export type AuthAccount = {
 
 type CandidateOverview = {
   account: AuthAccount;
-  candidate: any;
-  session: any;
+  candidate: {
+    id: string;
+    code: string;
+    status: string;
+    goals: string;
+    experience: string;
+    final_score: number;
+  };
+  session: {
+    progress: number;
+    phase: string;
+  } | null;
 };
 
 type CommitteeOverview = {
@@ -37,7 +44,40 @@ type CommitteeOverview = {
   pendingCases: number;
 };
 
-export { findAccountById, findAccountForLogin };
+function mapAccount(account: Awaited<ReturnType<typeof getAccountByIdentifier>>) {
+  if (!account) {
+    return null;
+  }
+
+  return {
+    id: account.id,
+    role: account.role as "candidate" | "committee",
+    name: account.name,
+    email: account.email ?? undefined,
+    phone: account.phone ?? undefined,
+    passwordHash: account.passwordHash,
+    entityId: account.candidate?.id ?? account.committeeMember?.id ?? account.id,
+    createdAt: account.createdAt.toISOString(),
+    updatedAt: account.updatedAt.toISOString(),
+  } satisfies AuthAccount;
+}
+
+export async function findAccountForLogin(role: "candidate" | "committee", identifier: string) {
+  return mapAccount(await getAccountByIdentifier(role, identifier));
+}
+
+export async function findAccountBySessionToken(token: string) {
+  const session = await getAuthenticatedAccountByToken(token);
+  if (!session) {
+    return null;
+  }
+
+  return mapAccount({
+    ...session.account,
+    candidate: session.account.candidate,
+    committeeMember: session.account.committeeMember,
+  });
+}
 
 export async function registerCandidateAccount(input: {
   name: string;
@@ -45,37 +85,19 @@ export async function registerCandidateAccount(input: {
   phone: string;
   passwordHash: string;
 }) {
-  const existing = await findAccountForLogin("candidate", input.phone);
-  if (existing) {
-    throw new Error("Candidate account already exists");
-  }
+  const result = await createCandidateAccountWithSession(input);
 
-  if (input.email) {
-    const existingEmail = await findAccountForLogin("candidate", input.email);
-    if (existingEmail) {
-      throw new Error("Candidate account already exists");
-    }
-  }
-
-  const accountId = `acct-${randomUUID().slice(0, 10)}`;
-  const entity = await registerCandidateProfile({
-    authSessionId: accountId,
-    name: input.name,
-    email: input.email,
-    phone: input.phone,
-  });
-
-  return saveAccount({
-    id: accountId,
-    role: "candidate",
-    name: input.name,
-    email: input.email,
-    phone: input.phone,
-    passwordHash: input.passwordHash,
-    entityId: entity.candidateId,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  });
+  return {
+    id: result.session.token,
+    role: "candidate" as const,
+    name: result.account.name,
+    email: result.account.email ?? undefined,
+    phone: result.account.phone ?? undefined,
+    passwordHash: result.account.passwordHash,
+    entityId: result.candidate.id,
+    createdAt: result.account.createdAt.toISOString(),
+    updatedAt: result.account.updatedAt.toISOString(),
+  };
 }
 
 export async function registerCommitteeAccount(input: {
@@ -83,52 +105,104 @@ export async function registerCommitteeAccount(input: {
   email: string;
   passwordHash: string;
 }) {
-  const existing = await findAccountForLogin("committee", input.email);
-  if (existing) {
-    throw new Error("Committee account already exists");
-  }
-
-  const member = await registerCommitteeMember({
-    name: input.name,
-    email: input.email,
-  });
-
-  return saveAccount({
-    id: `acct-${randomUUID().slice(0, 10)}`,
-    role: "committee",
-    name: input.name,
-    email: input.email,
-    passwordHash: input.passwordHash,
-    entityId: member.id,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  });
-}
-
-export async function getCandidateAccountOverview(accountId: string): Promise<CandidateOverview | null> {
-  const account = await findAccountById(accountId);
-  if (!account || account.role !== "candidate") return null;
-
-  const [candidate, session] = await Promise.all([
-    getPersistedCandidate(account.entityId),
-    getPersistedSessionByAuthSession(account.id),
-  ]);
+  const result = await createCommitteeAccountWithSession(input);
 
   return {
-    account,
-    candidate,
-    session,
+    id: result.session.token,
+    role: "committee" as const,
+    name: result.account.name,
+    email: result.account.email ?? undefined,
+    phone: undefined,
+    passwordHash: result.account.passwordHash,
+    entityId: result.committeeMember.id,
+    createdAt: result.account.createdAt.toISOString(),
+    updatedAt: result.account.updatedAt.toISOString(),
   };
 }
 
-export async function getCommitteeAccountOverview(accountId: string): Promise<CommitteeOverview | null> {
-  const account = await findAccountById(accountId);
-  if (!account || account.role !== "committee") return null;
+export async function createLoginSession(accountId: string) {
+  return createAccountSession(accountId);
+}
+
+export async function getCandidateAccountOverview(sessionToken: string): Promise<CandidateOverview | null> {
+  const session = await getAuthenticatedAccountByToken(sessionToken);
+  if (!session || session.account.role !== "candidate") {
+    return null;
+  }
+
+  const candidate = await getCandidateByAccountId(session.account.id);
+
+  if (!candidate) {
+    return null;
+  }
 
   return {
-    account,
-    assignedVotes: 0,
-    approvedVotes: 0,
+    account: {
+      id: session.account.id,
+      role: "candidate",
+      name: session.account.name,
+      email: session.account.email ?? undefined,
+      phone: session.account.phone ?? undefined,
+      passwordHash: session.account.passwordHash,
+      entityId: candidate.id,
+      createdAt: session.account.createdAt.toISOString(),
+      updatedAt: session.account.updatedAt.toISOString(),
+    },
+    candidate: {
+      id: candidate.id,
+      code: candidate.code,
+      status: candidate.status,
+      goals: candidate.goals ?? "Goals will appear after application submission.",
+      experience: candidate.experience ?? "Experience will appear after application submission.",
+      final_score: candidate.overallScore ?? 0,
+    },
+    session: candidate.interviewSession
+      ? {
+          progress: candidate.interviewSession.progress,
+          phase: candidate.interviewSession.phase,
+        }
+      : null,
+  };
+}
+
+export async function getCommitteeAccountOverview(sessionToken: string): Promise<CommitteeOverview | null> {
+  const session = await getAuthenticatedAccountByToken(sessionToken);
+  if (!session || session.account.role !== "committee" || !session.account.committeeMember) {
+    return null;
+  }
+
+  const committeeStats = await getCommitteeStats();
+  const current = committeeStats.find((member) => member.id === session.account.committeeMember?.id);
+
+  return {
+    account: {
+      id: session.account.id,
+      role: "committee",
+      name: session.account.name,
+      email: session.account.email ?? undefined,
+      phone: session.account.phone ?? undefined,
+      passwordHash: session.account.passwordHash,
+      entityId: session.account.committeeMember.id,
+      createdAt: session.account.createdAt.toISOString(),
+      updatedAt: session.account.updatedAt.toISOString(),
+    },
+    assignedVotes: current?._count.votes ?? 0,
+    approvedVotes: current?.votes.filter((vote) => vote.decision === "approved").length ?? 0,
     pendingCases: 0,
+  };
+}
+
+export async function getCandidateApplicationOverview(candidateId: string) {
+  const record = await getCandidateApplicationRecord(candidateId);
+  if (!record) {
+    return null;
+  }
+
+  return {
+    candidate: record.candidate,
+    application: record.application,
+    resumeUrl: record.resumeUrl,
+    committeeVotes: record.committeeVotes,
+    latestEvaluation: record.latestEvaluation,
   };
 }

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { envFlags } from "@/lib/env";
-import { findAccountForLogin } from "@/lib/server/account-store";
-import { backendFetch } from "@/lib/server/backend-client";
+import { createLoginSession, findAccountForLogin } from "@/lib/server/account-store";
 import { applyAuthCookies, type AuthSession } from "@/lib/server/auth";
 import { verifyPassword } from "@/lib/server/password";
+import { addSecurityHeaders, sanitizeObject } from "@/lib/server/security";
+import { createAuditLog } from "@/lib/server/prisma";
 
 const loginSchema = z.object({
   role: z.enum(["candidate", "committee"]),
@@ -12,55 +12,21 @@ const loginSchema = z.object({
   password: z.string().min(8).max(128),
 });
 
-type BackendAuthResponse = {
-  account: {
-    role: AuthSession["role"];
-    name: string;
-    email?: string | null;
-    phone?: string | null;
-    entity_id: string;
-  };
-  session: { token: string };
-};
-
 export async function POST(request: NextRequest) {
-  const payload = loginSchema.parse(await request.json());
-
-  if (envFlags.backend) {
-    try {
-      const data = await backendFetch<BackendAuthResponse>("/api/v1/auth/login", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-
-      const session: AuthSession = {
-        sessionId: data.session.token,
-        role: data.account.role,
-        name: data.account.name,
-        email: data.account.email ?? undefined,
-        phone: data.account.phone ?? undefined,
-        entityId: data.account.entity_id,
-      };
-
-      const redirectTo = session.role === "committee" ? "/dashboard/account" : "/account";
-      const response = NextResponse.json({ ok: true, redirectTo, session });
-      return applyAuthCookies(response, session);
-    } catch (error) {
-      return NextResponse.json(
-        { error: error instanceof Error ? error.message : "Failed to login via backend" },
-        { status: 401 },
-      );
-    }
-  }
-
+  const rawPayload = loginSchema.parse(await request.json());
+  const payload = sanitizeObject(rawPayload) as z.infer<typeof loginSchema>;
   const account = await findAccountForLogin(payload.role, payload.identifier);
 
   if (!account || !verifyPassword(payload.password, account.passwordHash)) {
-    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    return addSecurityHeaders(
+      NextResponse.json({ error: "Invalid credentials" }, { status: 401 }),
+    );
   }
 
+  const persistedSession = await createLoginSession(account.id);
+
   const session: AuthSession = {
-    sessionId: account.id,
+    sessionId: persistedSession.token,
     role: account.role,
     name: account.name,
     email: account.email,
@@ -68,7 +34,22 @@ export async function POST(request: NextRequest) {
     entityId: account.entityId,
   };
 
+  await createAuditLog({
+    action: "AUTH_LOGIN",
+    entityType: "account",
+    entityId: account.id,
+    actorId: account.id,
+    actorType: account.role,
+    actorName: account.name,
+    ipAddress: request.headers.get("x-forwarded-for")?.split(",")[0] || undefined,
+    userAgent: request.headers.get("user-agent") || undefined,
+    details: {
+      role: account.role,
+      identifier: payload.identifier,
+    },
+  });
+
   const redirectTo = account.role === "committee" ? "/dashboard/account" : "/account";
   const response = NextResponse.json({ ok: true, redirectTo, session });
-  return applyAuthCookies(response, session);
+  return addSecurityHeaders(applyAuthCookies(response, session));
 }
