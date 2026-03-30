@@ -66,8 +66,8 @@ export async function getCandidateByAccountId(accountId: string) {
   });
 }
 
-export async function getAllCandidates(status?: string) {
-  const where = status ? { status } : {};
+export async function getAllCandidates(status?: 'in_progress' | 'completed' | 'shortlisted' | 'rejected' | 'flagged' | 'accepted' | 'withdrawn') {
+  const where = status ? { status: status as any } : {};
   
   return prisma.candidate.findMany({
     where,
@@ -493,7 +493,7 @@ export async function getCandidateStats() {
 
   return {
     total,
-    byStatus: byStatus.reduce((acc, s) => {
+    byStatus: byStatus.reduce((acc: Record<string, number>, s: { status: string; _count: { id: number } }) => {
       acc[s.status] = s._count.id;
       return acc;
     }, {} as Record<string, number>),

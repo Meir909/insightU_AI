@@ -12,20 +12,20 @@ datasource db {
 // ============================================================================
 
 model Account {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   role         UserRole
-  email        String?   @unique
-  phone        String?   @unique
-  passwordHash String    @map("password_hash")
+  email        String?  @unique
+  phone        String?  @unique
+  passwordHash String   @map("password_hash")
   name         String
-  
+
   // Relations
-  candidate    Candidate?
+  candidate       Candidate?
   committeeMember CommitteeMember?
-  sessions     Session[]
-  
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  sessions        Session[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([email])
   @@index([phone])
@@ -43,11 +43,11 @@ model Session {
   token     String   @unique
   accountId String   @map("account_id")
   expiresAt DateTime @map("expires_at")
-  
-  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now()) @map("created_at")
-  
+
   @@index([token])
   @@map("sessions")
 }
@@ -57,46 +57,47 @@ model Session {
 // ============================================================================
 
 model Candidate {
-  id          String    @id @default(cuid())
-  code        String    @unique // IU-2401 format
-  accountId   String    @unique @map("account_id")
-  
+  id        String @id @default(cuid())
+  code      String @unique // IU-2401 format
+  accountId String @unique @map("account_id")
+
   // Personal Info
   fullName    String    @map("full_name")
   email       String?
   phone       String?
   dateOfBirth DateTime? @map("date_of_birth")
   city        String?
-  
+
   // Education
-  educationLevel   String?   @map("education_level") // school, bachelor, master
-  institution      String?
-  graduationYear   Int?      @map("graduation_year")
-  
+  educationLevel String? @map("education_level") // school, bachelor, master
+  institution    String?
+  graduationYear Int?    @map("graduation_year")
+
   // Application Content
-  goals            String?   @db.Text
-  experience       String?   @db.Text
-  motivationText   String?   @map("motivation_text") @db.Text
-  whyInVision      String?   @map("why_invision") @db.Text
-  changeAgentVision String?  @map("change_agent_vision") @db.Text
-  leadershipDesc   String?   @map("leadership_desc") @db.Text
-  teamworkDesc     String?   @map("teamwork_desc") @db.Text
-  
+  goals             String? @db.Text
+  experience        String? @db.Text
+  motivationText    String? @map("motivation_text") @db.Text
+  whyInVision       String? @map("why_invision") @db.Text
+  changeAgentVision String? @map("change_agent_vision") @db.Text
+  leadershipDesc    String? @map("leadership_desc") @db.Text
+  teamworkDesc      String? @map("teamwork_desc") @db.Text
+
   // Status
-  status           CandidateStatus @default(in_progress)
-  overallScore     Float?    @map("overall_score")
-  
+  status       CandidateStatus @default(in_progress)
+  overallScore Float?          @map("overall_score")
+
   // Relations
-  account          Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account          Account               @relation(fields: [accountId], references: [id], onDelete: Cascade)
   interviewSession InterviewSession?
   resume           Resume?
   artifacts        Artifact[]
   evaluations      CandidateEvaluation[]
   committeeVotes   CommitteeVote[]
   liveInterviews   LiveInterview[]
-  
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  skills           CandidateSkill[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([status])
   @@index([overallScore])
@@ -118,30 +119,30 @@ enum CandidateStatus {
 // ============================================================================
 
 model InterviewSession {
-  id           String   @id @default(cuid())
-  candidateId  String   @unique @map("candidate_id")
-  
+  id          String @id @default(cuid())
+  candidateId String @unique @map("candidate_id")
+
   // Progress
-  progress     Int      @default(0)
-  phase        String   @default("Foundation")
-  status       InterviewStatus @default(active)
-  
+  progress Int             @default(0)
+  phase    String          @default("Foundation")
+  status   InterviewStatus @default(active)
+
   // Scores
-  cognitiveScore    Float?  @map("cognitive_score")
-  leadershipScore Float?  @map("leadership_score")
-  growthScore     Float?  @map("growth_score")
-  decisionScore   Float?  @map("decision_score")
-  motivationScore Float?  @map("motivation_score")
+  cognitiveScore    Float? @map("cognitive_score")
+  leadershipScore   Float? @map("leadership_score")
+  growthScore       Float? @map("growth_score")
+  decisionScore     Float? @map("decision_score")
+  motivationScore   Float? @map("motivation_score")
   authenticityScore Float? @map("authenticity_score")
-  confidenceScore Float?  @map("confidence_score")
-  aiRiskScore     Float?  @map("ai_risk_score")
-  
+  confidenceScore   Float? @map("confidence_score")
+  aiRiskScore       Float? @map("ai_risk_score")
+
   // Relations
-  candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  messages     InterviewMessage[]
-  
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  candidate Candidate          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  messages  InterviewMessage[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("interview_sessions")
 }
@@ -154,22 +155,22 @@ enum InterviewStatus {
 }
 
 model InterviewMessage {
-  id        String   @id @default(cuid())
-  sessionId String   @map("session_id")
-  
-  role      MessageRole
-  content   String   @db.Text
-  type      MessageType @default(text)
-  
+  id        String @id @default(cuid())
+  sessionId String @map("session_id")
+
+  role    MessageRole
+  content String      @db.Text
+  type    MessageType @default(text)
+
   // Scoring
-  scoreUpdate Json?  @map("score_update")
-  
+  scoreUpdate Json? @map("score_update")
+
   // Media
-  mediaUrl  String?  @map("media_url")
-  mediaType String?  @map("media_type")
-  
-  session   InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  
+  mediaUrl  String? @map("media_url")
+  mediaType String? @map("media_type")
+
+  session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([sessionId])
@@ -195,21 +196,21 @@ enum MessageType {
 // ============================================================================
 
 model Artifact {
-  id          String   @id @default(cuid())
-  candidateId String   @map("candidate_id")
-  
-  type        ArtifactType
-  name        String
-  url         String
-  size        Int      // bytes
-  mimeType    String?  @map("mime_type")
-  
+  id          String @id @default(cuid())
+  candidateId String @map("candidate_id")
+
+  type     ArtifactType
+  name     String
+  url      String
+  size     Int // bytes
+  mimeType String?      @map("mime_type")
+
   // Analysis
-  analysis    Json?    // Stores AI analysis results
-  
-  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime @default(now()) @map("created_at")
+  analysis Json? // Stores AI analysis results
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([candidateId])
   @@map("artifacts")
@@ -229,22 +230,22 @@ enum ArtifactType {
 // ============================================================================
 
 model Resume {
-  id          String   @id @default(cuid())
-  candidateId String   @unique @map("candidate_id")
-  
-  fileName    String   @map("file_name")
-  fileUrl     String   @map("file_url")
-  fileSize    Int      @map("file_size")
-  mimeType    String   @map("mime_type")
-  
+  id          String @id @default(cuid())
+  candidateId String @unique @map("candidate_id")
+
+  fileName String @map("file_name")
+  fileUrl  String @map("file_url")
+  fileSize Int    @map("file_size")
+  mimeType String @map("mime_type")
+
   // Extracted content
   extractedText String?  @map("extracted_text") @db.Text
-  keywords    String[] // Extracted skills/keywords
-  
-  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  keywords      String[] // Extracted skills/keywords
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("resumes")
 }
@@ -254,17 +255,17 @@ model Resume {
 // ============================================================================
 
 model CommitteeMember {
-  id        String   @id @default(cuid())
-  accountId String   @unique @map("account_id")
-  
-  name      String
-  email     String   @unique
-  role      String   @default("reviewer") // reviewer, chair, admin
-  
+  id        String @id @default(cuid())
+  accountId String @unique @map("account_id")
+
+  name  String
+  email String @unique
+  role  String @default("reviewer") // reviewer, chair, admin
+
   // Relations
-  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  votes     CommitteeVote[]
-  
+  account Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  votes   CommitteeVote[]
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -272,21 +273,21 @@ model CommitteeMember {
 }
 
 model CommitteeVote {
-  id          String   @id @default(cuid())
-  candidateId String   @map("candidate_id")
-  committeeId String   @map("committee_id")
-  
-  decision    VoteDecision
-  formalScore Int?     @map("formal_score")     // 0-100
-  informalScore Int?   @map("informal_score")   // 0-100
-  notes       String?  @db.Text
+  id          String @id @default(cuid())
+  candidateId String @map("candidate_id")
+  committeeId String @map("committee_id")
+
+  decision       VoteDecision
+  formalScore    Int?         @map("formal_score") // 0-100
+  informalScore  Int?         @map("informal_score") // 0-100
+  notes          String?      @db.Text
   recommendation String? // proceed, hold, reject
-  
-  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  committee   CommitteeMember @relation(fields: [committeeId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  candidate Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  committee CommitteeMember @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([candidateId, committeeId])
   @@index([candidateId])
@@ -305,38 +306,38 @@ enum VoteDecision {
 // ============================================================================
 
 model CandidateEvaluation {
-  id          String   @id @default(cuid())
-  candidateId String   @map("candidate_id")
-  
+  id          String @id @default(cuid())
+  candidateId String @map("candidate_id")
+
   // Scores
-  hardSkills      Float?  @map("hard_skills")
-  softSkills      Float?  @map("soft_skills")
-  problemSolving  Float?  @map("problem_solving")
-  communication   Float?  @map("communication")
-  adaptability    Float?  @map("adaptability")
-  
+  hardSkills     Float? @map("hard_skills")
+  softSkills     Float? @map("soft_skills")
+  problemSolving Float? @map("problem_solving")
+  communication  Float? @map("communication")
+  adaptability   Float? @map("adaptability")
+
   // Advanced evaluation
   leadershipPotential Float? @map("leadership_potential")
   changeAgentMindset  Float? @map("change_agent_mindset")
   authenticity        Float? @map("authenticity")
-  
-  overallScore    Float?  @map("overall_score")
-  confidence      Float?
-  
+
+  overallScore Float? @map("overall_score")
+  confidence   Float?
+
   // Details
-  strengths       Json?
-  weaknesses      Json?
-  redFlags        Json?   @map("red_flags")
-  recommendation  String?
-  reasoning       String? @db.Text
-  
+  strengths      Json?
+  weaknesses     Json?
+  redFlags       Json?   @map("red_flags")
+  recommendation String?
+  reasoning      String? @db.Text
+
   // Source
-  evaluatorType   String  @default("ai") @map("evaluator_type") // ai, committee, hybrid
-  evaluatorId     String? @map("evaluator_id")
-  
-  candidate       Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  
-  createdAt       DateTime @default(now()) @map("created_at")
+  evaluatorType String  @default("ai") @map("evaluator_type") // ai, committee, hybrid
+  evaluatorId   String? @map("evaluator_id")
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([candidateId])
   @@map("candidate_evaluations")
@@ -347,32 +348,32 @@ model CandidateEvaluation {
 // ============================================================================
 
 model LiveInterview {
-  id          String   @id @default(cuid())
-  candidateId String   @map("candidate_id")
-  sessionId   String   @unique @map("session_id")
-  
-  type        String   // behavioral, technical, mixed
-  status      String   @default("active") // active, completed, cancelled
-  
+  id          String @id @default(cuid())
+  candidateId String @map("candidate_id")
+  sessionId   String @unique @map("session_id")
+
+  type   String // behavioral, technical, mixed
+  status String @default("active") // active, completed, cancelled
+
   // Analysis results
-  videoAnalysis   Json?  @map("video_analysis")
-  voiceAnalysis   Json?  @map("voice_analysis")
-  combinedScore   Float? @map("combined_score")
-  
+  videoAnalysis Json?  @map("video_analysis")
+  voiceAnalysis Json?  @map("voice_analysis")
+  combinedScore Float? @map("combined_score")
+
   // Key moments
-  keyMoments      Json?  @map("key_moments")
-  
+  keyMoments Json? @map("key_moments")
+
   // Final assessment
-  confidence      Float?
-  stressLevel     Float? @map("stress_level")
-  authenticity    Float?
-  recommendation  String?
-  
-  startedAt       DateTime @default(now()) @map("started_at")
-  completedAt     DateTime? @map("completed_at")
-  
-  candidate       Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  
+  confidence     Float?
+  stressLevel    Float?  @map("stress_level")
+  authenticity   Float?
+  recommendation String?
+
+  startedAt   DateTime  @default(now()) @map("started_at")
+  completedAt DateTime? @map("completed_at")
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
   @@index([candidateId])
   @@map("live_interviews")
 }
@@ -382,14 +383,14 @@ model LiveInterview {
 // ============================================================================
 
 model CandidateSkill {
-  id          String   @id @default(cuid())
-  candidateId String   @map("candidate_id")
+  id          String @id @default(cuid())
+  candidateId String @map("candidate_id")
   skill       String
-  proficiency Int?     // 1-5
-  source      String   @default("self_reported") // self_reported, resume, interview, ai_detected
-  
-  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  
+  proficiency Int? // 1-5
+  source      String @default("self_reported") // self_reported, resume, interview, ai_detected
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
   @@unique([candidateId, skill])
   @@map("candidate_skills")
 }
@@ -399,21 +400,21 @@ model CandidateSkill {
 // ============================================================================
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  
-  action      String   // create, update, delete, view, vote, score
-  entityType  String   @map("entity_type") // candidate, vote, evaluation
-  entityId    String   @map("entity_id")
-  
-  actorId     String?  @map("actor_id")
-  actorType   String   @map("actor_type") // candidate, committee, system
-  actorName   String?  @map("actor_name")
-  
-  details     Json?    // Additional context
-  ipAddress   String?  @map("ip_address")
-  userAgent   String?  @map("user_agent")
-  
-  createdAt   DateTime @default(now()) @map("created_at")
+  id String @id @default(cuid())
+
+  action     String // create, update, delete, view, vote, score
+  entityType String @map("entity_type") // candidate, vote, evaluation
+  entityId   String @map("entity_id")
+
+  actorId   String? @map("actor_id")
+  actorType String  @map("actor_type") // candidate, committee, system
+  actorName String? @map("actor_name")
+
+  details   Json? // Additional context
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([entityType, entityId])
   @@index([actorId])
@@ -426,19 +427,19 @@ model AuditLog {
 // ============================================================================
 
 model EmailLog {
-  id          String   @id @default(cuid())
-  
-  to          String
-  subject     String
-  template    String   // welcome, interview_reminder, decision, etc.
-  status      String   @default("pending") // pending, sent, failed
-  
-  candidateId String?  @map("candidate_id")
-  
-  error       String?
-  sentAt      DateTime? @map("sent_at")
-  
-  createdAt   DateTime @default(now()) @map("created_at")
+  id String @id @default(cuid())
+
+  to       String
+  subject  String
+  template String // welcome, interview_reminder, decision, etc.
+  status   String @default("pending") // pending, sent, failed
+
+  candidateId String? @map("candidate_id")
+
+  error  String?
+  sentAt DateTime? @map("sent_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([candidateId])
   @@map("email_logs")

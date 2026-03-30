@@ -13,7 +13,7 @@ import type {
 } from "@/lib/types";
 
 const REQUIRED_APPROVALS = 3;
-const STORAGE_BUCKET = env.SUPABASE_STORAGE_BUCKET || "candidate-artifacts";
+const STORAGE_BUCKET = "candidate-artifacts";
 
 type CandidateRow = {
   id: string;
