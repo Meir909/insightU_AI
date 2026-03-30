@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/server/auth";
-import { getPersistedCandidates } from "@/lib/server/serverless-store";
+import { getAllCandidates } from "@/lib/server/prisma";
+import { addSecurityHeaders } from "@/lib/server/security";
+import { logger } from "@/lib/server/logging";
 
 export async function GET(request: NextRequest) {
   const session = getAuthSession(request);
@@ -14,12 +16,22 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const candidates = await getPersistedCandidates();
-    return NextResponse.json({ candidates });
+    const candidates = await getAllCandidates();
+    
+    logger.api.info("Fetched all candidates", {
+      count: candidates.length,
+      sessionId: session.sessionId,
+    });
+    
+    const response = NextResponse.json({ candidates });
+    return addSecurityHeaders(response);
   } catch (error) {
-    return NextResponse.json(
+    logger.api.error("Failed to fetch candidates", error as Error);
+    
+    const response = NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch candidates" },
       { status: 500 }
     );
+    return addSecurityHeaders(response);
   }
 }

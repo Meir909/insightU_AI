@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/server/auth";
-import { getPersistedCandidates } from "@/lib/server/serverless-store";
+import { getAllCandidates } from "@/lib/server/prisma";
+import { addSecurityHeaders } from "@/lib/server/security";
+import { logger } from "@/lib/server/logging";
 
 export async function GET(request: NextRequest) {
   const session = getAuthSession(request);
@@ -14,29 +16,36 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const candidates = await getPersistedCandidates();
-    
-    const shortlisted = candidates.filter(
-      c => c.status === "shortlisted" || c.status === "completed"
-    );
+    const candidates = await getAllCandidates('shortlisted');
 
-    return NextResponse.json({
-      shortlisted: shortlisted.map(c => ({
+    logger.api.info("Fetched shortlist", {
+      sessionId: session.sessionId,
+      count: candidates.length,
+    });
+
+    const response = NextResponse.json({
+      shortlisted: candidates.map((c: any) => ({
         id: c.id,
         code: c.code,
-        name: c.name,
+        name: c.fullName,
         email: c.email,
         phone: c.phone,
         city: c.city,
         status: c.status,
+        overallScore: c.overallScore,
         createdAt: c.createdAt,
       })),
-      count: shortlisted.length,
+      count: candidates.length,
     });
+    
+    return addSecurityHeaders(response);
   } catch (error) {
-    return NextResponse.json(
+    logger.api.error("Failed to fetch shortlist", error as Error);
+    
+    const response = NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch shortlist" },
       { status: 500 }
     );
+    return addSecurityHeaders(response);
   }
 }
