@@ -3,7 +3,9 @@ export type CandidateStatus =
   | "completed"
   | "shortlisted"
   | "rejected"
-  | "flagged";
+  | "flagged"
+  | "accepted"
+  | "withdrawn";
 
 export type ArtifactKind = "text" | "audio" | "video" | "document";
 export type ChatRole = "assistant" | "user";

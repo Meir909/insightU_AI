@@ -1,10 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { CandidateStatus } from "@/lib/types";
 
-const config: Record<
-  CandidateStatus,
-  { label: string; className: string }
-> = {
+const config: Record<CandidateStatus, { label: string; className: string }> = {
   in_progress: {
     label: "В процессе",
     className: "bg-white/5 text-text-secondary",
@@ -24,6 +21,14 @@ const config: Record<
   flagged: {
     label: "Флаг",
     className: "bg-status-flag/12 text-status-flag",
+  },
+  accepted: {
+    label: "Принят",
+    className: "bg-brand-green/18 text-brand-green",
+  },
+  withdrawn: {
+    label: "Снят",
+    className: "bg-white/5 text-text-muted",
   },
 };
 
