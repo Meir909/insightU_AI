@@ -1,64 +1,65 @@
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthSession } from "@/lib/server/auth";
-import { getStore } from "@/lib/server/serverless-store";
-import { 
-  analyzeVideoFrame, 
-  analyzeVoiceStress, 
+import { addSecurityHeaders } from "@/lib/server/security";
+import {
+  createAuditLog,
+  createEvaluation,
+  createLiveInterviewRecord,
+  getAuthenticatedAccountByToken,
+  getCandidateById,
+  getLiveInterviewBySessionId,
+} from "@/lib/server/prisma";
+import {
   analyzeFullInterview,
-  RealTimeFrameAnalysis 
+  analyzeVideoFrame,
+  analyzeVoiceStress,
+  RealTimeFrameAnalysis,
+  VoiceStressAnalysis,
 } from "@/lib/services/realtime-interview";
 
-// Schema for starting a session
 const startSessionSchema = z.object({
   candidateId: z.string(),
   interviewType: z.enum(["structured", "behavioral", "technical", "mixed"]).default("mixed"),
-  duration: z.number().min(5).max(60).default(30), // minutes
+  duration: z.number().min(5).max(60).default(30),
   questions: z.array(z.string()).optional(),
 });
 
-// Active sessions storage (in production, use Redis)
-const activeSessions = new Map<string, {
+type ActiveLiveSession = {
   candidateId: string;
   startTime: string;
   frames: RealTimeFrameAnalysis[];
-  voiceSegments: any[];
+  voiceSegments: VoiceStressAnalysis[];
   questions: string[];
   currentQuestionIndex: number;
-}>();
+  interviewType: "structured" | "behavioral" | "technical" | "mixed";
+};
 
-/**
- * Start a new real-life interview session
- */
+const activeSessions = new Map<string, ActiveLiveSession>();
+
 export async function POST(request: NextRequest) {
   const session = getAuthSession(request);
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return addSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
   try {
-    const body = await request.json();
-    const params = startSessionSchema.parse(body);
+    const params = startSessionSchema.parse(await request.json());
+    const persistedSession = await getAuthenticatedAccountByToken(session.sessionId);
+    const candidate = await getCandidateById(params.candidateId);
 
-    // Verify candidate exists
-    const store = getStore();
-    const candidate = store.candidates.find((c: any) => c.id === params.candidateId) as any;
-    
     if (!candidate) {
-      return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
+      return addSecurityHeaders(NextResponse.json({ error: "Candidate not found" }, { status: 404 }));
     }
 
-    // Check permissions
-    if (session.role === "candidate" && session.entityId !== params.candidateId) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (session.role === "candidate" && persistedSession?.account.candidate?.id !== params.candidateId) {
+      return addSecurityHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }));
     }
 
-    // Generate default questions if not provided
-    const defaultQuestions = getDefaultQuestions(params.interviewType);
-    const questions = params.questions || defaultQuestions;
+    const questions = params.questions || getDefaultQuestions(params.interviewType);
+    const sessionId = `live-${randomUUID()}`;
 
-    // Create session
-    const sessionId = `live-${Date.now()}`;
     activeSessions.set(sessionId, {
       candidateId: params.candidateId,
       startTime: new Date().toISOString(),
@@ -66,56 +67,73 @@ export async function POST(request: NextRequest) {
       voiceSegments: [],
       questions,
       currentQuestionIndex: 0,
+      interviewType: params.interviewType,
     });
 
-    // Save to candidate record
-    candidate.liveInterviews = candidate.liveInterviews || [];
-    candidate.liveInterviews.push({
+    await createLiveInterviewRecord({
+      candidateId: params.candidateId,
       sessionId,
       type: params.interviewType,
       status: "active",
-      startedAt: new Date().toISOString(),
-      questions,
-    });
-    candidate.updatedAt = new Date().toISOString();
-
-    return NextResponse.json({
-      success: true,
-      sessionId,
-      candidateId: params.candidateId,
-      interviewType: params.interviewType,
-      questions,
-      duration: params.duration,
-      message: "Real-life interview session started",
-      instructions: [
-        "Ensure good lighting and quiet environment",
-        "Position camera at eye level",
-        "Speak clearly and maintain eye contact",
-        "Answer naturally - this is AI-analyzed but human-reviewed",
-      ],
+      keyMoments: {
+        questions,
+        durationMinutes: params.duration,
+      },
     });
 
+    await createAuditLog({
+      action: "LIVE_INTERVIEW_STARTED",
+      entityType: "live_interview",
+      entityId: sessionId,
+      actorId: persistedSession?.account.id,
+      actorType: session.role,
+      actorName: session.name,
+      ipAddress: request.headers.get("x-forwarded-for")?.split(",")[0] || undefined,
+      userAgent: request.headers.get("user-agent") || undefined,
+      details: {
+        candidateId: params.candidateId,
+        interviewType: params.interviewType,
+        questions,
+      },
+    });
+
+    return addSecurityHeaders(
+      NextResponse.json({
+        success: true,
+        sessionId,
+        candidateId: params.candidateId,
+        interviewType: params.interviewType,
+        questions,
+        duration: params.duration,
+        message: "Real-life interview session started",
+        instructions: [
+          "Ensure good lighting and quiet environment",
+          "Position camera at eye level",
+          "Speak clearly and maintain eye contact",
+          "Answer naturally - this is AI-analyzed but human-reviewed",
+        ],
+      }),
+    );
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation error", details: error.errors },
-        { status: 400 }
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 }),
       );
     }
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to start interview" },
-      { status: 500 }
+
+    return addSecurityHeaders(
+      NextResponse.json(
+        { error: error instanceof Error ? error.message : "Failed to start interview" },
+        { status: 500 },
+      ),
     );
   }
 }
 
-/**
- * Submit video frame for real-time analysis
- */
 export async function PUT(request: NextRequest) {
   const session = getAuthSession(request);
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return addSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
   try {
@@ -125,245 +143,308 @@ export async function PUT(request: NextRequest) {
     const audioChunk = formData.get("audio") as File | null;
 
     if (!sessionId || !frame) {
-      return NextResponse.json(
-        { error: "sessionId and frame required" },
-        { status: 400 }
+      return addSecurityHeaders(
+        NextResponse.json({ error: "sessionId and frame required" }, { status: 400 }),
       );
     }
 
     const activeSession = activeSessions.get(sessionId);
     if (!activeSession) {
-      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+      return addSecurityHeaders(NextResponse.json({ error: "Session not found" }, { status: 404 }));
     }
 
-    // Verify permission
-    if (session.role === "candidate" && session.entityId !== activeSession.candidateId) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const persistedSession = await getAuthenticatedAccountByToken(session.sessionId);
+    if (session.role === "candidate" && persistedSession?.account.candidate?.id !== activeSession.candidateId) {
+      return addSecurityHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }));
     }
 
-    // Convert frame to buffer
-    const frameBytes = await frame.arrayBuffer();
-    const frameBuffer = Buffer.from(frameBytes);
-
-    // Analyze frame
+    const frameBuffer = Buffer.from(await frame.arrayBuffer());
     const frameAnalysis = await analyzeVideoFrame(
       frameBuffer,
       activeSession.frames,
-      activeSession.voiceSegments[activeSession.voiceSegments.length - 1]
+      activeSession.voiceSegments[activeSession.voiceSegments.length - 1],
     );
-
     activeSession.frames.push(frameAnalysis);
 
-    // Analyze audio if provided
-    let voiceAnalysis = null;
+    let voiceAnalysis: VoiceStressAnalysis | null = null;
     if (audioChunk) {
-      const audioBytes = await audioChunk.arrayBuffer();
-      const audioBuffer = Buffer.from(audioBytes);
-      
+      const audioBuffer = Buffer.from(await audioChunk.arrayBuffer());
       voiceAnalysis = await analyzeVoiceStress(
         audioBuffer,
-        activeSession.voiceSegments[activeSession.voiceSegments.length - 1]
+        activeSession.voiceSegments[activeSession.voiceSegments.length - 1],
       );
-      
       activeSession.voiceSegments.push(voiceAnalysis);
     }
 
-    // Get current question
     const currentQuestion = activeSession.questions[activeSession.currentQuestionIndex];
-
-    // Determine if we should move to next question
     const shouldAdvance = detectQuestionCompletion(frameAnalysis, voiceAnalysis);
     if (shouldAdvance && activeSession.currentQuestionIndex < activeSession.questions.length - 1) {
-      activeSession.currentQuestionIndex++;
+      activeSession.currentQuestionIndex += 1;
     }
 
-    return NextResponse.json({
-      success: true,
+    await createLiveInterviewRecord({
+      candidateId: activeSession.candidateId,
       sessionId,
-      timestamp: frameAnalysis.timestamp,
-      currentQuestion,
-      nextQuestionIndex: activeSession.currentQuestionIndex,
-      analysis: {
-        face: {
-          visible: frameAnalysis.face.visible,
-          dominantExpression: frameAnalysis.face.dominanceExpression,
-          confidence: frameAnalysis.face.confidence,
-        },
-        eyes: {
-          lookingAtCamera: frameAnalysis.eyes.lookingAtCamera,
-          eyeContactDuration: frameAnalysis.eyes.eyeContactDuration,
-        },
-        state: frameAnalysis.state,
-        voice: voiceAnalysis ? {
-          stress: voiceAnalysis.emotions.stress,
-          confidence: voiceAnalysis.emotions.confidence,
-          dominance: voiceAnalysis.emotions.dominance,
-        } : null,
+      type: activeSession.interviewType,
+      status: "active",
+      videoAnalysis: {
+        latestFrame: frameAnalysis,
+        frameCount: activeSession.frames.length,
       },
-      progress: {
-        currentQuestion: activeSession.currentQuestionIndex + 1,
-        totalQuestions: activeSession.questions.length,
-        percentage: Math.round((activeSession.currentQuestionIndex / activeSession.questions.length) * 100),
+      voiceAnalysis: voiceAnalysis
+        ? {
+            latestVoice: voiceAnalysis,
+            segmentCount: activeSession.voiceSegments.length,
+          }
+        : undefined,
+      combinedScore: Math.round((frameAnalysis.state.confidence + frameAnalysis.state.authenticity) / 2),
+      confidence: frameAnalysis.state.confidence,
+      stressLevel: frameAnalysis.state.stressLevel,
+      authenticity: frameAnalysis.state.authenticity,
+      keyMoments: {
+        currentQuestionIndex: activeSession.currentQuestionIndex,
+        questions: activeSession.questions,
       },
     });
 
+    return addSecurityHeaders(
+      NextResponse.json({
+        success: true,
+        sessionId,
+        timestamp: frameAnalysis.timestamp,
+        currentQuestion,
+        nextQuestionIndex: activeSession.currentQuestionIndex,
+        analysis: {
+          face: {
+            visible: frameAnalysis.face.visible,
+            dominantExpression: frameAnalysis.face.dominanceExpression,
+            confidence: frameAnalysis.face.confidence,
+          },
+          eyes: {
+            lookingAtCamera: frameAnalysis.eyes.lookingAtCamera,
+            eyeContactDuration: frameAnalysis.eyes.eyeContactDuration,
+          },
+          state: frameAnalysis.state,
+          voice: voiceAnalysis
+            ? {
+                stress: voiceAnalysis.emotions.stress,
+                confidence: voiceAnalysis.emotions.confidence,
+                dominance: voiceAnalysis.emotions.dominance,
+              }
+            : null,
+        },
+        progress: {
+          currentQuestion: activeSession.currentQuestionIndex + 1,
+          totalQuestions: activeSession.questions.length,
+          percentage: Math.round((activeSession.currentQuestionIndex / activeSession.questions.length) * 100),
+        },
+      }),
+    );
   } catch (error) {
-    console.error("Frame analysis error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Analysis failed" },
-      { status: 500 }
+    return addSecurityHeaders(
+      NextResponse.json(
+        { error: error instanceof Error ? error.message : "Analysis failed" },
+        { status: 500 },
+      ),
     );
   }
 }
 
-/**
- * Complete interview and get final analysis
- */
 export async function PATCH(request: NextRequest) {
   const session = getAuthSession(request);
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return addSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
   try {
     const body = await request.json();
-    const { sessionId, action } = body;
+    const { sessionId, action } = body as { sessionId?: string; action?: string };
 
     if (!sessionId || action !== "complete") {
-      return NextResponse.json(
-        { error: "sessionId and action='complete' required" },
-        { status: 400 }
+      return addSecurityHeaders(
+        NextResponse.json({ error: "sessionId and action='complete' required" }, { status: 400 }),
       );
     }
 
     const activeSession = activeSessions.get(sessionId);
     if (!activeSession) {
-      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+      return addSecurityHeaders(NextResponse.json({ error: "Session not found" }, { status: 404 }));
     }
 
-    // Verify permission
-    if (session.role === "candidate" && session.entityId !== activeSession.candidateId) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const persistedSession = await getAuthenticatedAccountByToken(session.sessionId);
+    if (session.role === "candidate" && persistedSession?.account.candidate?.id !== activeSession.candidateId) {
+      return addSecurityHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }));
     }
 
-    // Run full interview analysis
     const fullAnalysis = await analyzeFullInterview(
       activeSession.frames,
       activeSession.voiceSegments,
-      activeSession.questions
+      activeSession.questions,
     );
-
     fullAnalysis.candidateId = activeSession.candidateId;
 
-    // Save results
-    const store = getStore();
-    const candidate = store.candidates.find((c: any) => c.id === activeSession.candidateId) as any;
-    
-    if (candidate) {
-      const liveInterview = candidate.liveInterviews?.find((li: any) => li.sessionId === sessionId);
-      if (liveInterview) {
-        liveInterview.status = "completed";
-        liveInterview.completedAt = new Date().toISOString();
-        liveInterview.analysis = fullAnalysis;
-      }
-      
-      // Update candidate scores with live interview data
-      candidate.liveInterviewScores = {
-        confidence: fullAnalysis.overall.confidence,
-        stressManagement: fullAnalysis.overall.stressManagement,
-        authenticity: fullAnalysis.overall.authenticity,
-        engagement: fullAnalysis.overall.engagement,
-        presence: fullAnalysis.overall.presence,
-        recommendation: fullAnalysis.overall.recommendation,
-      };
-      
-      candidate.updatedAt = new Date().toISOString();
-    }
+    const combinedOverall = Math.round(
+      (fullAnalysis.overall.confidence +
+        fullAnalysis.overall.stressManagement +
+        fullAnalysis.overall.authenticity +
+        fullAnalysis.overall.engagement +
+        fullAnalysis.overall.presence) /
+        5,
+    );
 
-    // Clean up session
-    activeSessions.delete(sessionId);
-
-    return NextResponse.json({
-      success: true,
+    const liveRecord = await createLiveInterviewRecord({
+      candidateId: activeSession.candidateId,
       sessionId,
-      analysis: {
-        session: {
-          duration: fullAnalysis.duration,
-          questionCount: fullAnalysis.questionCount,
-        },
-        scores: fullAnalysis.overall,
-        keyMoments: fullAnalysis.keyMoments.slice(0, 5), // Top 5 moments
-        videoMetrics: fullAnalysis.video,
-        voiceMetrics: fullAnalysis.voice,
-      },
+      type: activeSession.interviewType,
+      status: "completed",
+      videoAnalysis: fullAnalysis.video,
+      voiceAnalysis: fullAnalysis.voice,
+      combinedScore: combinedOverall,
+      keyMoments: fullAnalysis.keyMoments,
+      confidence: fullAnalysis.overall.confidence,
+      stressLevel: fullAnalysis.overall.stressManagement,
+      authenticity: fullAnalysis.overall.authenticity,
       recommendation: fullAnalysis.overall.recommendation,
-      reasoning: fullAnalysis.overall.reasoning,
     });
 
+    const evaluation = await createEvaluation({
+      candidateId: activeSession.candidateId,
+      hardSkills: combinedOverall,
+      softSkills: fullAnalysis.overall.engagement,
+      problemSolving: fullAnalysis.overall.presence,
+      communication: fullAnalysis.overall.confidence,
+      adaptability: fullAnalysis.overall.stressManagement,
+      leadershipPotential: fullAnalysis.overall.presence,
+      changeAgentMindset: fullAnalysis.overall.engagement,
+      authenticity: fullAnalysis.overall.authenticity,
+      overallScore: combinedOverall,
+      confidence: fullAnalysis.overall.confidence,
+      strengths: fullAnalysis.keyMoments.flatMap((moment) => moment.highlights).slice(0, 8),
+      weaknesses: fullAnalysis.keyMoments.flatMap((moment) => moment.redFlags).slice(0, 8),
+      redFlags: fullAnalysis.keyMoments.filter((moment) => moment.redFlags.length > 0).slice(0, 5),
+      recommendation: fullAnalysis.overall.recommendation,
+      reasoning: fullAnalysis.overall.reasoning.join(" "),
+      evaluatorType: "live_interview_ai",
+    });
+
+    await createAuditLog({
+      action: "LIVE_INTERVIEW_COMPLETED",
+      entityType: "live_interview",
+      entityId: liveRecord.id,
+      actorId: persistedSession?.account.id,
+      actorType: session.role,
+      actorName: session.name,
+      ipAddress: request.headers.get("x-forwarded-for")?.split(",")[0] || undefined,
+      userAgent: request.headers.get("user-agent") || undefined,
+      details: {
+        candidateId: activeSession.candidateId,
+        sessionId,
+        evaluationId: evaluation.id,
+        combinedOverall,
+      },
+    });
+
+    activeSessions.delete(sessionId);
+
+    return addSecurityHeaders(
+      NextResponse.json({
+        success: true,
+        sessionId,
+        analysis: {
+          session: {
+            duration: fullAnalysis.duration,
+            questionCount: fullAnalysis.questionCount,
+          },
+          scores: fullAnalysis.overall,
+          keyMoments: fullAnalysis.keyMoments.slice(0, 5),
+          videoMetrics: fullAnalysis.video,
+          voiceMetrics: fullAnalysis.voice,
+        },
+        recommendation: fullAnalysis.overall.recommendation,
+        reasoning: fullAnalysis.overall.reasoning,
+      }),
+    );
   } catch (error) {
-    console.error("Completion error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to complete interview" },
-      { status: 500 }
+    return addSecurityHeaders(
+      NextResponse.json(
+        { error: error instanceof Error ? error.message : "Failed to complete interview" },
+        { status: 500 },
+      ),
     );
   }
 }
 
-/**
- * Get session status (for real-time updates)
- */
 export async function GET(request: NextRequest) {
   const session = getAuthSession(request);
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return addSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
   const { searchParams } = new URL(request.url);
   const sessionId = searchParams.get("sessionId");
 
   if (!sessionId) {
-    return NextResponse.json({ error: "sessionId required" }, { status: 400 });
+    return addSecurityHeaders(NextResponse.json({ error: "sessionId required" }, { status: 400 }));
   }
 
   const activeSession = activeSessions.get(sessionId);
+  const persistedSession = await getAuthenticatedAccountByToken(session.sessionId);
+  const persistedRecord = await getLiveInterviewBySessionId(sessionId);
+  const candidateId = activeSession?.candidateId ?? persistedRecord?.candidateId;
+
+  if (!candidateId) {
+    return addSecurityHeaders(NextResponse.json({ error: "Session not found" }, { status: 404 }));
+  }
+
+  if (session.role === "candidate" && persistedSession?.account.candidate?.id !== candidateId) {
+    return addSecurityHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }));
+  }
+
   if (!activeSession) {
-    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    return addSecurityHeaders(
+      NextResponse.json({
+        sessionId,
+        status: persistedRecord?.status || "completed",
+        candidateId,
+        persisted: true,
+      }),
+    );
   }
 
-  // Verify permission
-  if (session.role === "candidate" && session.entityId !== activeSession.candidateId) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const recentFrames = activeSession.frames.slice(-30);
+  const avgConfidence =
+    recentFrames.length > 0
+      ? recentFrames.reduce((sum, frame) => sum + frame.state.confidence, 0) / recentFrames.length
+      : 0;
+  const avgStress =
+    recentFrames.length > 0
+      ? recentFrames.reduce((sum, frame) => sum + frame.state.stressLevel, 0) / recentFrames.length
+      : 0;
 
-  // Calculate current stats
-  const recentFrames = activeSession.frames.slice(-30); // Last 3 seconds at 10fps
-  const avgConfidence = recentFrames.length > 0
-    ? recentFrames.reduce((sum, f) => sum + f.state.confidence, 0) / recentFrames.length
-    : 0;
-  const avgStress = recentFrames.length > 0
-    ? recentFrames.reduce((sum, f) => sum + f.state.stressLevel, 0) / recentFrames.length
-    : 0;
-
-  return NextResponse.json({
-    sessionId,
-    status: "active",
-    candidateId: activeSession.candidateId,
-    progress: {
-      currentQuestion: activeSession.currentQuestionIndex + 1,
-      totalQuestions: activeSession.questions.length,
-      percentage: Math.round((activeSession.currentQuestionIndex / activeSession.questions.length) * 100),
-    },
-    currentMetrics: {
-      confidence: Math.round(avgConfidence),
-      stress: Math.round(avgStress),
-      eyeContact: recentFrames.filter(f => f.eyes.lookingAtCamera).length / recentFrames.length * 100,
-    },
-    currentQuestion: activeSession.questions[activeSession.currentQuestionIndex],
-    timeElapsed: Math.floor((Date.now() - new Date(activeSession.startTime).getTime()) / 1000),
-  });
+  return addSecurityHeaders(
+    NextResponse.json({
+      sessionId,
+      status: "active",
+      candidateId: activeSession.candidateId,
+      progress: {
+        currentQuestion: activeSession.currentQuestionIndex + 1,
+        totalQuestions: activeSession.questions.length,
+        percentage: Math.round((activeSession.currentQuestionIndex / activeSession.questions.length) * 100),
+      },
+      currentMetrics: {
+        confidence: Math.round(avgConfidence),
+        stress: Math.round(avgStress),
+        eyeContact:
+          recentFrames.length > 0
+            ? (recentFrames.filter((frame) => frame.eyes.lookingAtCamera).length / recentFrames.length) * 100
+            : 0,
+      },
+      currentQuestion: activeSession.questions[activeSession.currentQuestionIndex],
+      timeElapsed: Math.floor((Date.now() - new Date(activeSession.startTime).getTime()) / 1000),
+    }),
+  );
 }
 
-// Helper functions
 function getDefaultQuestions(type: string): string[] {
   const questionSets: Record<string, string[]> = {
     structured: [
@@ -394,7 +475,7 @@ function getDefaultQuestions(type: string): string[] {
       "Tell me about a time you solved a difficult problem.",
       "How do you prioritize tasks when everything is urgent?",
       "Describe your approach to teamwork in technical projects.",
-      "What drives your passion for technology/innovation?",
+      "What drives your passion for technology or innovation?",
     ],
     mixed: [
       "Tell me about yourself.",
@@ -407,28 +488,21 @@ function getDefaultQuestions(type: string): string[] {
       "What questions do you have for us?",
     ],
   };
-  
+
   return questionSets[type] || questionSets.mixed;
 }
 
 function detectQuestionCompletion(
   frameAnalysis: RealTimeFrameAnalysis,
-  voiceAnalysis: any
-): boolean {
-  // Detect if candidate has finished answering
-  
-  // Long pause + neutral expression = likely done
-  if (voiceAnalysis?.pausePatterns?.averageDuration > 3 && 
-      frameAnalysis.face.expressions.neutral > 0.6) {
+  voiceAnalysis: VoiceStressAnalysis | null,
+) {
+  if (voiceAnalysis?.pausePatterns.averageDuration && voiceAnalysis.pausePatterns.averageDuration > 3 && frameAnalysis.face.expressions.neutral > 0.6) {
     return true;
   }
-  
-  // Looking away + low movement = thinking about next question
-  if (!frameAnalysis.eyes.lookingAtCamera && 
-      frameAnalysis.body.movementLevel < 20 &&
-      voiceAnalysis?.pausePatterns?.frequency > 5) {
+
+  if (!frameAnalysis.eyes.lookingAtCamera && frameAnalysis.body.movementLevel < 20 && (voiceAnalysis?.pausePatterns.frequency ?? 0) > 5) {
     return true;
   }
-  
+
   return false;
 }

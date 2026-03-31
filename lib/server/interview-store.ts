@@ -4,7 +4,8 @@ import { getAssistantReply, getInterviewMeta } from "@/lib/server/interviewer";
 import { scoreInterview } from "@/lib/server/interview-scoring";
 import {
   addInterviewMessage,
-  getCandidateByAccountId,
+  getCandidateById,
+  getAuthenticatedAccountByToken,
   getInterviewSessionByCandidateId,
   updateInterviewProgress,
 } from "@/lib/server/prisma";
@@ -47,7 +48,7 @@ function summarizeAttachments(attachments: ChatAttachment[]) {
 }
 
 async function loadArtifacts(candidateId: string): Promise<ChatAttachment[]> {
-  const candidate = await getCandidateByAccountId(candidateId);
+  const candidate = await getCandidateById(candidateId);
   if (!candidate) {
     return [];
   }
@@ -72,8 +73,13 @@ async function loadArtifacts(candidateId: string): Promise<ChatAttachment[]> {
   });
 }
 
+async function resolveCandidateFromSessionToken(sessionToken: string) {
+  const persistedSession = await getAuthenticatedAccountByToken(sessionToken);
+  return persistedSession?.account.candidate ?? null;
+}
+
 export async function getOrCreateSession(_requestedSessionId: string, userId: string, candidateName = "Candidate") {
-  const candidate = await getCandidateByAccountId(userId);
+  const candidate = await resolveCandidateFromSessionToken(userId);
   if (!candidate) {
     throw new Error("Candidate profile not found for this session.");
   }
@@ -110,7 +116,7 @@ export async function getOrCreateSession(_requestedSessionId: string, userId: st
     status: persisted.status === "completed" ? "completed" : "active",
     scoreUpdate: persisted.messages.findLast((item) => item.scoreUpdate)?.scoreUpdate as ReturnType<typeof scoreInterview> | null,
     phase: persisted.phase,
-    artifacts: await loadArtifacts(userId),
+    artifacts: await loadArtifacts(candidate.id),
   } satisfies SessionState;
 }
 

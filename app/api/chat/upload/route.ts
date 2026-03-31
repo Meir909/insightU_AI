@@ -6,7 +6,6 @@ import { uploadAudio, uploadDocument, uploadVideo } from "@/lib/services/s3";
 import {
   createArtifact,
   createAuditLog,
-  getCandidateByAccountId,
   getAuthenticatedAccountByToken,
 } from "@/lib/server/prisma";
 
@@ -23,7 +22,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const candidate = await getCandidateByAccountId(session.sessionId);
+    const persistedSession = await getAuthenticatedAccountByToken(session.sessionId);
+    const candidate = persistedSession?.account.candidate;
     if (!candidate) {
       return addSecurityHeaders(NextResponse.json({ error: "Candidate profile not found" }, { status: 404 }));
     }
@@ -72,7 +72,6 @@ export async function POST(request: NextRequest) {
       analysis,
     });
 
-    const persistedSession = await getAuthenticatedAccountByToken(session.sessionId);
     await createAuditLog({
       action: "CHAT_ARTIFACT_UPLOADED",
       entityType: "artifact",

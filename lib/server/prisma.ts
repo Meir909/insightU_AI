@@ -75,6 +75,7 @@ export async function getCandidateById(id: string) {
         },
       },
       liveInterviews: true,
+      skills: true,
       account: {
         select: {
           email: true,
@@ -101,6 +102,7 @@ export async function getCandidateByAccountId(accountId: string) {
       evaluations: {
         orderBy: { createdAt: 'desc' },
       },
+      skills: true,
     },
   });
 }
@@ -704,6 +706,8 @@ export async function createLiveInterviewRecord(data: {
   authenticity?: number | null;
   recommendation?: string | null;
 }) {
+  const completedAt = data.status && data.status !== "active" ? new Date() : null;
+
   return prisma.liveInterview.upsert({
     where: { sessionId: data.sessionId },
     update: {
@@ -717,7 +721,7 @@ export async function createLiveInterviewRecord(data: {
       stressLevel: data.stressLevel ?? undefined,
       authenticity: data.authenticity ?? undefined,
       recommendation: data.recommendation ?? undefined,
-      completedAt: new Date(),
+      completedAt,
     },
     create: {
       candidateId: data.candidateId,
@@ -732,7 +736,22 @@ export async function createLiveInterviewRecord(data: {
       stressLevel: data.stressLevel ?? undefined,
       authenticity: data.authenticity ?? undefined,
       recommendation: data.recommendation ?? undefined,
-      completedAt: new Date(),
+      completedAt: completedAt ?? undefined,
+    },
+  });
+}
+
+export async function getLiveInterviewBySessionId(sessionId: string) {
+  return prisma.liveInterview.findUnique({
+    where: { sessionId },
+    include: {
+      candidate: {
+        select: {
+          id: true,
+          fullName: true,
+          code: true,
+        },
+      },
     },
   });
 }
