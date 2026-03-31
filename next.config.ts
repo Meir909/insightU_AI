@@ -8,7 +8,6 @@ const nextConfig: NextConfig = {
   },
   
   // Static optimization
-  output: 'standalone',
   poweredByHeader: false,
   generateEtags: true,
   
