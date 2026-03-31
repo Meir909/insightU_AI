@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
-type Role = "candidate" | "committee";
+type Role = "candidate" | "committee" | "admin";
 
 export function LoginEntry() {
   const router = useRouter();
@@ -36,10 +36,11 @@ export function LoginEntry() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-2 rounded-[20px] border border-white/8 bg-bg-elevated/70 p-1.5">
+      <div className="grid grid-cols-3 gap-2 rounded-[20px] border border-white/8 bg-bg-elevated/70 p-1.5">
         {[
           { key: "candidate", label: "Кандидат", icon: UserRound },
           { key: "committee", label: "Комиссия", icon: LockKeyhole },
+          { key: "admin", label: "Админ", icon: LockKeyhole },
         ].map(({ key, label, icon: Icon }) => {
           const active = role === key;
           return (

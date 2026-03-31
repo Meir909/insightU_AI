@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { AUTH_ROLE_COOKIE, AUTH_SESSION_COOKIE } from "@/lib/server/auth";
+import { AUTH_ROLE_COOKIE, AUTH_SESSION_COOKIE, hasBackofficeAccess } from "@/lib/server/auth";
 
 export default function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -7,7 +7,7 @@ export default function proxy(request: NextRequest) {
   const role = request.cookies.get(AUTH_ROLE_COOKIE)?.value;
 
   if (pathname.startsWith("/dashboard")) {
-    if (!sessionId || role !== "committee") {
+    if (!sessionId || !hasBackofficeAccess(role)) {
       return NextResponse.redirect(new URL("/sign-in", request.url));
     }
   }

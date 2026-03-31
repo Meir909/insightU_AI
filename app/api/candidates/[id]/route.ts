@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/server/auth";
-import { getCandidateById, getAccountById } from "@/lib/server/prisma";
+import { getCandidateById, getAuthenticatedAccountByToken } from "@/lib/server/prisma";
 import { addSecurityHeaders } from "@/lib/server/security";
 import { logger } from "@/lib/server/logging";
 
@@ -23,8 +23,8 @@ export async function GET(
 
     // Candidates can only view their own profile
     if (session.role === "candidate") {
-      const account = await getAccountById(session.sessionId);
-      if (account?.candidate?.id !== id) {
+      const persistedSession = await getAuthenticatedAccountByToken(session.sessionId);
+      if (persistedSession?.account.candidate?.id !== id) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     }

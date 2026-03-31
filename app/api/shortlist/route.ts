@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/server/auth";
+import { getAuthSession, hasBackofficeAccess } from "@/lib/server/auth";
 import { getAllCandidates } from "@/lib/server/prisma";
 import { addSecurityHeaders } from "@/lib/server/security";
 import { logger } from "@/lib/server/logging";
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Only committee can view shortlist
-  if (session.role !== "committee") {
+  if (!hasBackofficeAccess(session.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

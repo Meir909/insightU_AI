@@ -7,7 +7,7 @@ import { addSecurityHeaders, sanitizeObject } from "@/lib/server/security";
 import { createAuditLog } from "@/lib/server/prisma";
 
 const loginSchema = z.object({
-  role: z.enum(["candidate", "committee"]),
+  role: z.enum(["candidate", "committee", "admin"]),
   identifier: z.string().min(3),
   password: z.string().min(8).max(128),
 });

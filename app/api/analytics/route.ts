@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/server/auth";
+import { getAuthSession, hasBackofficeAccess } from "@/lib/server/auth";
 import { getCandidateStats, getAllCandidates } from "@/lib/server/prisma";
 import { addSecurityHeaders } from "@/lib/server/security";
 import { logger } from "@/lib/server/logging";
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Only committee can view analytics
-  if (session.role !== "committee") {
+  if (!hasBackofficeAccess(session.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -31,7 +31,6 @@ export async function GET(request: NextRequest) {
         rejected: stats.rejected,
         in_progress: stats.byStatus?.in_progress || 0,
         completed: stats.byStatus?.completed || 0,
-        new: stats.byStatus?.new || 0,
         average_score: Math.round((stats.averageScore || 0) * 10) / 10,
       },
       candidates: candidates.map((c: any) => ({

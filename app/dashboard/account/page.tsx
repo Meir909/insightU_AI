@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getCommitteeAccountOverview } from "@/lib/server/account-store";
+import { getAdminAccountOverview, getCommitteeAccountOverview } from "@/lib/server/account-store";
 import {
   AUTH_EMAIL_COOKIE,
   AUTH_ENTITY_COOKIE,
@@ -8,6 +8,7 @@ import {
   AUTH_PHONE_COOKIE,
   AUTH_ROLE_COOKIE,
   AUTH_SESSION_COOKIE,
+  hasBackofficeAccess,
   parseAuthSession,
 } from "@/lib/server/auth";
 
@@ -22,8 +23,42 @@ export default async function CommitteeAccountPage() {
     entityId: cookieStore.get(AUTH_ENTITY_COOKIE)?.value,
   });
 
-  if (!session || session.role !== "committee") {
+  if (!session || !hasBackofficeAccess(session.role)) {
     redirect("/sign-in");
+  }
+
+  if (session.role === "admin") {
+    const overview = await getAdminAccountOverview(session.sessionId);
+    if (!overview) {
+      redirect("/sign-in");
+    }
+
+    return (
+      <div className="space-y-8">
+        <section className="space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Admin cabinet</p>
+          <div>
+            <h2 className="text-3xl font-black tracking-tight text-white">{overview.account.name}</h2>
+            <p className="mt-2 text-sm text-text-secondary">{overview.account.email}</p>
+          </div>
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-3">
+          <div className="panel-soft p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Всего кандидатов</p>
+            <p className="mt-3 text-3xl font-black text-white">{overview.totalCandidates}</p>
+          </div>
+          <div className="panel-soft p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Шорт-лист</p>
+            <p className="mt-3 text-3xl font-black text-brand-green">{overview.shortlisted}</p>
+          </div>
+          <div className="panel-soft p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Флаги ручной проверки</p>
+            <p className="mt-3 text-3xl font-black text-white">{overview.flagged}</p>
+          </div>
+        </section>
+      </div>
+    );
   }
 
   const overview = await getCommitteeAccountOverview(session.sessionId);

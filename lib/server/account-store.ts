@@ -6,12 +6,13 @@ import {
   getAuthenticatedAccountByToken,
   getCandidateApplicationRecord,
   getCandidateByAccountId,
+  getCandidateStats,
   getCommitteeStats,
 } from "@/lib/server/prisma";
 
 export type AuthAccount = {
   id: string;
-  role: "candidate" | "committee";
+  role: "candidate" | "committee" | "admin";
   name: string;
   email?: string;
   phone?: string;
@@ -44,6 +45,13 @@ type CommitteeOverview = {
   pendingCases: number;
 };
 
+type AdminOverview = {
+  account: AuthAccount;
+  totalCandidates: number;
+  shortlisted: number;
+  flagged: number;
+};
+
 function mapAccount(account: Awaited<ReturnType<typeof getAccountByIdentifier>>) {
   if (!account) {
     return null;
@@ -51,7 +59,7 @@ function mapAccount(account: Awaited<ReturnType<typeof getAccountByIdentifier>>)
 
   return {
     id: account.id,
-    role: account.role as "candidate" | "committee",
+    role: account.role as "candidate" | "committee" | "admin",
     name: account.name,
     email: account.email ?? undefined,
     phone: account.phone ?? undefined,
@@ -62,7 +70,7 @@ function mapAccount(account: Awaited<ReturnType<typeof getAccountByIdentifier>>)
   } satisfies AuthAccount;
 }
 
-export async function findAccountForLogin(role: "candidate" | "committee", identifier: string) {
+export async function findAccountForLogin(role: "candidate" | "committee" | "admin", identifier: string) {
   return mapAccount(await getAccountByIdentifier(role, identifier));
 }
 
@@ -189,6 +197,32 @@ export async function getCommitteeAccountOverview(sessionToken: string): Promise
     assignedVotes: current?._count.votes ?? 0,
     approvedVotes: current?.votes.filter((vote) => vote.decision === "approved").length ?? 0,
     pendingCases: 0,
+  };
+}
+
+export async function getAdminAccountOverview(sessionToken: string): Promise<AdminOverview | null> {
+  const session = await getAuthenticatedAccountByToken(sessionToken);
+  if (!session || session.account.role !== "admin") {
+    return null;
+  }
+
+  const stats = await getCandidateStats();
+
+  return {
+    account: {
+      id: session.account.id,
+      role: "admin",
+      name: session.account.name,
+      email: session.account.email ?? undefined,
+      phone: session.account.phone ?? undefined,
+      passwordHash: session.account.passwordHash,
+      entityId: session.account.id,
+      createdAt: session.account.createdAt.toISOString(),
+      updatedAt: session.account.updatedAt.toISOString(),
+    },
+    totalCandidates: stats.total,
+    shortlisted: stats.shortlisted,
+    flagged: stats.byStatus.flagged || 0,
   };
 }
 
