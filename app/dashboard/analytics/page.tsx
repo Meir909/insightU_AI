@@ -5,7 +5,9 @@ export default async function AnalyticsPage() {
   const [candidates, fairness] = await Promise.all([getRanking(), getFairnessSummary()]);
 
   const average = (key: keyof (typeof candidates)[number]) =>
-    Math.round(candidates.reduce((sum, candidate) => sum + Number(candidate[key]), 0) / candidates.length);
+    candidates.length > 0
+      ? Math.round(candidates.reduce((sum, candidate) => sum + Number(candidate[key]), 0) / candidates.length)
+      : 0;
 
   const dimensionData = [
     { label: "Cognitive", value: average("cognitive") },
@@ -30,6 +32,9 @@ export default async function AnalyticsPage() {
       fairnessScore={fairness.fairnessScore}
       avgConfidence={fairness.avgConfidence}
       manualReviewRate={fairness.manualReviewRate}
+      cohortAverageScore={fairness.cohortAverageScore ?? 0}
+      scoreSpread={fairness.scoreSpread ?? 0}
+      warningCount={fairness.warningCount ?? 0}
     />
   );
 }

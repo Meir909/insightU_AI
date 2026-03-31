@@ -5,19 +5,34 @@ import {
   getCandidateById,
   getCandidateStats,
 } from "@/lib/server/prisma";
-import type { Candidate, CandidateArtifact, CommitteeReview, CommitteeVote } from "@/lib/types";
+import type {
+  Candidate,
+  CandidateArtifact,
+  CommitteeReview,
+  CommitteeVote,
+} from "@/lib/types";
 
 type FairnessSummary = {
   fairnessScore: number;
   avgConfidence: number;
   manualReviewRate: number;
+  cohortAverageScore?: number;
+  scoreSpread?: number;
+  warningCount?: number;
 };
 
-function mapVotes(votes: NonNullable<Awaited<ReturnType<typeof getCandidateById>>>["committeeVotes"]): CommitteeVote[] {
+function mapVotes(
+  votes: NonNullable<Awaited<ReturnType<typeof getCandidateById>>>["committeeVotes"],
+): CommitteeVote[] {
   return votes.map((vote) => ({
     memberId: vote.committeeId,
     memberName: vote.committee.name,
-    decision: vote.decision === "approved" ? "approve" : vote.decision === "rejected" ? "reject" : "hold",
+    decision:
+      vote.decision === "approved"
+        ? "approve"
+        : vote.decision === "rejected"
+          ? "reject"
+          : "hold",
     rationale: vote.notes || vote.recommendation || "Committee review saved.",
     createdAt: vote.createdAt.toISOString(),
   }));
@@ -34,17 +49,39 @@ function mapCommitteeReview(votes: CommitteeVote[]): CommitteeReview {
     approvedCount,
     rejectCount,
     holdCount,
-    finalDecision: approvedCount >= 3 ? "approved" : rejectCount >= 3 ? "rejected" : votes.length > 0 ? "escalated" : "pending",
+    finalDecision:
+      approvedCount >= 3
+        ? "approved"
+        : rejectCount >= 3
+          ? "rejected"
+          : votes.length > 0
+            ? "escalated"
+            : "pending",
     corruptionGuard:
-      "Кандидат не может быть принят единственным голосом. Для положительного решения требуется минимум 3 независимых одобрения комиссии.",
+      "Кандидат не может быть принят единоличным решением. Для положительного решения нужны минимум 3 независимых одобрения комиссии.",
   };
 }
 
-function mapArtifacts(artifacts: Array<{ id: string; type: string; name: string; mimeType: string | null; size: number; analysis: unknown; url: string }>): CandidateArtifact[] {
+function mapArtifacts(
+  artifacts: Array<{
+    id: string;
+    type: string;
+    name: string;
+    mimeType: string | null;
+    size: number;
+    analysis: unknown;
+    url: string;
+  }>,
+): CandidateArtifact[] {
   return artifacts.map((artifact) => {
     const analysis =
       artifact.analysis && typeof artifact.analysis === "object"
-        ? (artifact.analysis as { transcript?: string; summary?: string; keyPoints?: string[]; highlights?: string[] })
+        ? (artifact.analysis as {
+            transcript?: string;
+            summary?: string;
+            keyPoints?: string[];
+            highlights?: string[];
+          })
         : undefined;
 
     return {
@@ -61,16 +98,15 @@ function mapArtifacts(artifacts: Array<{ id: string; type: string; name: string;
   });
 }
 
-function mapCandidateFromRecord(record: NonNullable<Awaited<ReturnType<typeof getCandidateById>>>): Candidate {
+function mapCandidateFromRecord(
+  record: NonNullable<Awaited<ReturnType<typeof getCandidateById>>>,
+): Candidate {
   const latestEvaluation = record.evaluations[0];
   const votes = mapVotes(record.committeeVotes);
   const interview = record.interviewSession;
   const confidence = Math.max(
     0,
-    Math.min(
-      1,
-      (latestEvaluation?.confidence ?? interview?.confidenceScore ?? 65) / 100,
-    ),
+    Math.min(1, (latestEvaluation?.confidence ?? interview?.confidenceScore ?? 65) / 100),
   );
   const aiRisk = Math.max(0, Math.min(1, (interview?.aiRiskScore ?? 18) / 100));
 
@@ -95,12 +131,13 @@ function mapCandidateFromRecord(record: NonNullable<Awaited<ReturnType<typeof ge
         artifact.analysis && typeof artifact.analysis === "object"
           ? (artifact.analysis as { redFlags?: string[]; keyPoints?: string[] })
           : undefined;
+
       return [...(analysis?.redFlags || []), ...(analysis?.keyPoints || [])];
     }),
     needs_manual_review: aiRisk >= 0.45 || confidence <= 0.65,
     reasoning:
       latestEvaluation?.reasoning ||
-      "Система использует только реальные данные кандидата, артефакты и результаты interview/session scoring.",
+      "Система использует только реальные данные кандидата, загруженные артефакты и результаты scoring по интервью-сессии.",
     key_quotes:
       interview?.messages
         .filter((message) => message.role === "user")
@@ -120,7 +157,7 @@ function mapCandidateFromRecord(record: NonNullable<Awaited<ReturnType<typeof ge
 
 function mapCandidateSummary(record: Awaited<ReturnType<typeof getAllCandidates>>[number]): Candidate {
   const latestEvaluation = record.evaluations[0];
-  const confidence = Math.max(0, Math.min(1, ((latestEvaluation?.confidence ?? 65) / 100)));
+  const confidence = Math.max(0, Math.min(1, (latestEvaluation?.confidence ?? 65) / 100));
 
   return enrichCandidate({
     id: record.id,
@@ -140,7 +177,8 @@ function mapCandidateSummary(record: Awaited<ReturnType<typeof getAllCandidates>
     ai_detection_prob: 0.18,
     ai_signals: [],
     needs_manual_review: record.status === "flagged",
-    reasoning: latestEvaluation?.reasoning || "Detailed explainability appears after full evaluation and review.",
+    reasoning:
+      latestEvaluation?.reasoning || "Detailed explainability appears after full evaluation and review.",
     key_quotes: [],
     goals: record.goals || "Goals will appear after application submission.",
     experience: record.experience || "Experience will appear after application submission.",
@@ -155,7 +193,7 @@ function mapCandidateSummary(record: Awaited<ReturnType<typeof getAllCandidates>
       holdCount: 0,
       finalDecision: "pending",
       corruptionGuard:
-        "Кандидат не может быть принят единственным голосом. Для положительного решения требуется минимум 3 независимых одобрения комиссии.",
+        "Кандидат не может быть принят единоличным решением. Для положительного решения нужны минимум 3 независимых одобрения комиссии.",
     },
     evaluation_session_id: undefined,
     created_at: record.createdAt.toISOString(),
@@ -193,19 +231,49 @@ export async function getShortlist(): Promise<Candidate[]> {
 export async function getFairnessSummary(): Promise<FairnessSummary> {
   try {
     const [stats, ranking] = await Promise.all([getCandidateStats(), getRanking()]);
+    const averageScore =
+      ranking.length > 0
+        ? ranking.reduce((sum, candidate) => sum + candidate.final_score, 0) / ranking.length
+        : 0;
+    const cities = [...new Set(ranking.map((candidate) => candidate.city).filter(Boolean))];
+    const cityAverages = cities
+      .map((city) => {
+        const cityCandidates = ranking.filter((candidate) => candidate.city === city);
+        return cityCandidates.length > 0
+          ? cityCandidates.reduce((sum, candidate) => sum + candidate.final_score, 0) /
+              cityCandidates.length
+          : 0;
+      })
+      .filter((value) => Number.isFinite(value));
+    const scoreSpread =
+      cityAverages.length > 1 ? Math.max(...cityAverages) - Math.min(...cityAverages) : 0;
+    const manualReviewRate =
+      stats.total > 0 ? Math.round(((stats.byStatus.flagged || 0) / stats.total) * 100) : 0;
+    const fairnessScore = Math.max(
+      0,
+      Math.round((100 - scoreSpread * 1.5 - manualReviewRate * 0.2) * 10) / 10,
+    );
+
     return {
-      fairnessScore: ranking.length > 0 ? 0.92 : 0,
+      fairnessScore,
       avgConfidence: Math.round(
-        (ranking.reduce((sum, candidate) => sum + candidate.confidence, 0) / Math.max(ranking.length, 1)) * 100,
+        (ranking.reduce((sum, candidate) => sum + candidate.confidence, 0) /
+          Math.max(ranking.length, 1)) *
+          100,
       ),
-      manualReviewRate:
-        stats.total > 0 ? Math.round(((stats.byStatus.flagged || 0) / stats.total) * 100) : 0,
+      manualReviewRate,
+      cohortAverageScore: Math.round(averageScore * 10) / 10,
+      scoreSpread: Math.round(scoreSpread * 10) / 10,
+      warningCount: Number(scoreSpread > 15) + Number(manualReviewRate > 35),
     };
   } catch {
     return {
       fairnessScore: 0,
       avgConfidence: 0,
       manualReviewRate: 0,
+      cohortAverageScore: 0,
+      scoreSpread: 0,
+      warningCount: 0,
     };
   }
 }
