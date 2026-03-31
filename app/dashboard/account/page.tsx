@@ -1,6 +1,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getAdminAccountOverview, getCommitteeAccountOverview } from "@/lib/server/account-store";
+import {
+  getAdminAccountOverview,
+  getCommitteeAccountOverview,
+  getViewerAccountOverview,
+} from "@/lib/server/account-store";
 import {
   AUTH_EMAIL_COOKIE,
   AUTH_ENTITY_COOKIE,
@@ -12,7 +16,7 @@ import {
   parseAuthSession,
 } from "@/lib/server/auth";
 
-export default async function CommitteeAccountPage() {
+export default async function BackofficeAccountPage() {
   const cookieStore = await cookies();
   const session = parseAuthSession({
     sessionId: cookieStore.get(AUTH_SESSION_COOKIE)?.value,
@@ -55,6 +59,40 @@ export default async function CommitteeAccountPage() {
           <div className="panel-soft p-5">
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Флаги ручной проверки</p>
             <p className="mt-3 text-3xl font-black text-white">{overview.flagged}</p>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  if (session.role === "viewer") {
+    const overview = await getViewerAccountOverview(session.sessionId);
+    if (!overview) {
+      redirect("/sign-in");
+    }
+
+    return (
+      <div className="space-y-8">
+        <section className="space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Viewer cabinet</p>
+          <div>
+            <h2 className="text-3xl font-black tracking-tight text-white">{overview.account.name}</h2>
+            <p className="mt-2 text-sm text-text-secondary">{overview.account.email}</p>
+          </div>
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-3">
+          <div className="panel-soft p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Всего кандидатов</p>
+            <p className="mt-3 text-3xl font-black text-white">{overview.totalCandidates}</p>
+          </div>
+          <div className="panel-soft p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Шорт-лист</p>
+            <p className="mt-3 text-3xl font-black text-brand-green">{overview.shortlisted}</p>
+          </div>
+          <div className="panel-soft p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Средний score</p>
+            <p className="mt-3 text-3xl font-black text-white">{overview.averageScore}</p>
           </div>
         </section>
       </div>

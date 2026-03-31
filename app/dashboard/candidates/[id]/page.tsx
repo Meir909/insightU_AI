@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,6 +9,16 @@ import { ExplainabilityBlock } from "@/components/dashboard/explainability-block
 import { ScoreRadar } from "@/components/dashboard/score-radar";
 import { ScoreSpherePanel } from "@/components/dashboard/score-sphere-panel";
 import { StatusBadge } from "@/components/ui/status-badge";
+import {
+  AUTH_EMAIL_COOKIE,
+  AUTH_ENTITY_COOKIE,
+  AUTH_NAME_COOKIE,
+  AUTH_PHONE_COOKIE,
+  AUTH_ROLE_COOKIE,
+  AUTH_SESSION_COOKIE,
+  canVote,
+  parseAuthSession,
+} from "@/lib/server/auth";
 import { getCandidate, getRanking } from "@/lib/api";
 
 export async function generateStaticParams() {
@@ -22,6 +33,15 @@ export default async function CandidatePage({
 }) {
   const { id } = await params;
   const candidate = await getCandidate(id);
+  const cookieStore = await cookies();
+  const session = parseAuthSession({
+    sessionId: cookieStore.get(AUTH_SESSION_COOKIE)?.value,
+    role: cookieStore.get(AUTH_ROLE_COOKIE)?.value,
+    name: cookieStore.get(AUTH_NAME_COOKIE)?.value,
+    email: cookieStore.get(AUTH_EMAIL_COOKIE)?.value,
+    phone: cookieStore.get(AUTH_PHONE_COOKIE)?.value,
+    entityId: cookieStore.get(AUTH_ENTITY_COOKIE)?.value,
+  });
 
   if (!candidate) {
     notFound();
@@ -136,7 +156,16 @@ export default async function CandidatePage({
         </div>
 
         <div className="space-y-4">
-          <CommitteeVotePanel candidate={candidate} />
+          {canVote(session?.role) ? (
+            <CommitteeVotePanel candidate={candidate} />
+          ) : (
+            <div className="panel-soft p-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Review mode</p>
+              <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+                Этот профиль открыт в режиме чтения. Голосование комиссии доступно только роли committee.
+              </p>
+            </div>
+          )}
 
           {[
             { label: "Цели кандидата", value: candidate.goals },

@@ -36,6 +36,7 @@ enum UserRole {
   candidate
   committee
   admin
+  viewer
 }
 
 model Session {

@@ -8,7 +8,7 @@ export const AUTH_EMAIL_COOKIE = "insightu_email";
 export const AUTH_PHONE_COOKIE = "insightu_phone";
 export const AUTH_ENTITY_COOKIE = "insightu_entity";
 
-export type AuthRole = "candidate" | "committee" | "admin";
+export type AuthRole = "candidate" | "committee" | "admin" | "viewer";
 
 export type AuthSession = {
   sessionId: string;
@@ -45,7 +45,7 @@ export function parseAuthSession(input: {
     return null;
   }
 
-  if (role !== "candidate" && role !== "committee" && role !== "admin") {
+  if (role !== "candidate" && role !== "committee" && role !== "admin" && role !== "viewer") {
     return null;
   }
 
@@ -95,5 +95,9 @@ export function clearAuthCookies(response: NextResponse) {
 }
 
 export function hasBackofficeAccess(role?: string | null) {
-  return role === "committee" || role === "admin";
+  return role === "committee" || role === "admin" || role === "viewer";
+}
+
+export function canVote(role?: string | null) {
+  return role === "committee";
 }

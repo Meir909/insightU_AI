@@ -301,7 +301,7 @@ export async function createAccountSession(accountId: string) {
   return createSession(accountId, token, expiresAt);
 }
 
-export async function getAccountByIdentifier(role: "candidate" | "committee" | "admin", identifier: string) {
+export async function getAccountByIdentifier(role: "candidate" | "committee" | "admin" | "viewer", identifier: string) {
   const normalized = identifier.trim().toLowerCase();
   return prisma.account.findFirst({
     where: {

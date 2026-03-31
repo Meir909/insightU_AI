@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 type SessionData = {
   session: {
     name: string;
-    role: "candidate" | "committee";
+    role: "candidate" | "committee" | "admin" | "viewer";
     email?: string;
     phone?: string;
   };
@@ -44,9 +44,12 @@ export function SessionControls({ compact = false }: { compact?: boolean }) {
     return null;
   }
 
-  const Icon = data.session.role === "committee" ? ShieldCheck : UserRound;
-  const meta = data.session.role === "committee" ? data.session.email : data.session.phone;
-  const profileHref = data.session.role === "committee" ? "/dashboard/account" : "/account";
+  const Icon = data.session.role === "candidate" ? UserRound : ShieldCheck;
+  const meta =
+    data.session.role === "candidate"
+      ? data.session.phone
+      : data.session.email || (data.session.role === "viewer" ? "Read-only backoffice" : "Backoffice");
+  const profileHref = data.session.role === "candidate" ? "/account" : "/dashboard/account";
 
   return (
     <div className={`flex items-center gap-3 ${compact ? "" : "rounded-[22px] border border-white/8 bg-bg-surface px-4 py-3"}`}>
@@ -55,7 +58,16 @@ export function SessionControls({ compact = false }: { compact?: boolean }) {
       </div>
       <div className={compact ? "hidden md:block" : ""}>
         <p className="text-sm font-semibold text-white">{data.session.name}</p>
-        <p className="text-xs text-text-muted">{meta || (data.session.role === "committee" ? "Комиссия" : "Кандидат")}</p>
+        <p className="text-xs text-text-muted">
+          {meta ||
+            (data.session.role === "candidate"
+              ? "Кандидат"
+              : data.session.role === "viewer"
+                ? "Наблюдатель"
+                : data.session.role === "admin"
+                  ? "Администратор"
+                  : "Комиссия")}
+        </p>
       </div>
       <Link
         href={profileHref}

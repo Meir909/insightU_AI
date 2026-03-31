@@ -12,7 +12,7 @@ import {
 
 export type AuthAccount = {
   id: string;
-  role: "candidate" | "committee" | "admin";
+  role: "candidate" | "committee" | "admin" | "viewer";
   name: string;
   email?: string;
   phone?: string;
@@ -52,6 +52,13 @@ type AdminOverview = {
   flagged: number;
 };
 
+type ViewerOverview = {
+  account: AuthAccount;
+  totalCandidates: number;
+  shortlisted: number;
+  averageScore: number;
+};
+
 function mapAccount(account: Awaited<ReturnType<typeof getAccountByIdentifier>>) {
   if (!account) {
     return null;
@@ -59,7 +66,7 @@ function mapAccount(account: Awaited<ReturnType<typeof getAccountByIdentifier>>)
 
   return {
     id: account.id,
-    role: account.role as "candidate" | "committee" | "admin",
+    role: account.role as "candidate" | "committee" | "admin" | "viewer",
     name: account.name,
     email: account.email ?? undefined,
     phone: account.phone ?? undefined,
@@ -70,7 +77,7 @@ function mapAccount(account: Awaited<ReturnType<typeof getAccountByIdentifier>>)
   } satisfies AuthAccount;
 }
 
-export async function findAccountForLogin(role: "candidate" | "committee" | "admin", identifier: string) {
+export async function findAccountForLogin(role: "candidate" | "committee" | "admin" | "viewer", identifier: string) {
   return mapAccount(await getAccountByIdentifier(role, identifier));
 }
 
@@ -223,6 +230,32 @@ export async function getAdminAccountOverview(sessionToken: string): Promise<Adm
     totalCandidates: stats.total,
     shortlisted: stats.shortlisted,
     flagged: stats.byStatus.flagged || 0,
+  };
+}
+
+export async function getViewerAccountOverview(sessionToken: string): Promise<ViewerOverview | null> {
+  const session = await getAuthenticatedAccountByToken(sessionToken);
+  if (!session || session.account.role !== "viewer") {
+    return null;
+  }
+
+  const stats = await getCandidateStats();
+
+  return {
+    account: {
+      id: session.account.id,
+      role: "viewer",
+      name: session.account.name,
+      email: session.account.email ?? undefined,
+      phone: session.account.phone ?? undefined,
+      passwordHash: session.account.passwordHash,
+      entityId: session.account.id,
+      createdAt: session.account.createdAt.toISOString(),
+      updatedAt: session.account.updatedAt.toISOString(),
+    },
+    totalCandidates: stats.total,
+    shortlisted: stats.shortlisted,
+    averageScore: Math.round((stats.averageScore || 0) * 10) / 10,
   };
 }
 

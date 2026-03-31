@@ -7,7 +7,7 @@ import { addSecurityHeaders, sanitizeObject } from "@/lib/server/security";
 import { createAuditLog } from "@/lib/server/prisma";
 
 const loginSchema = z.object({
-  role: z.enum(["candidate", "committee", "admin"]),
+  role: z.enum(["candidate", "committee", "admin", "viewer"]),
   identifier: z.string().min(3),
   password: z.string().min(8).max(128),
 });
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  const redirectTo = account.role === "committee" ? "/dashboard/account" : "/account";
+  const redirectTo = account.role === "candidate" ? "/account" : "/dashboard/account";
   const response = NextResponse.json({ ok: true, redirectTo, session });
   return addSecurityHeaders(applyAuthCookies(response, session));
 }
