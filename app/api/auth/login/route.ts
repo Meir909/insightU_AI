@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
         NextResponse.json({ error: "Неверный формат данных" }, { status: 400 }),
       );
     }
+    console.error("[login] Unhandled error:", error instanceof Error ? error.message : String(error));
     return addSecurityHeaders(
       NextResponse.json({ error: "Ошибка сервера, попробуйте ещё раз" }, { status: 500 }),
     );
