@@ -11,6 +11,7 @@
  */
 
 import OpenAI from "openai";
+import { redactPIIFromUnknown, redactPIIText } from "@/lib/server/security";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -444,7 +445,7 @@ function formatCandidateData(profile: EvaluationRequest["candidateProfile"]): st
   // Application summary
   if (profile.applicationData) {
     parts.push("=== APPLICATION DATA ===");
-    parts.push(JSON.stringify(profile.applicationData, null, 2));
+    parts.push(JSON.stringify(redactPIIFromUnknown(profile.applicationData), null, 2));
   }
   
   // Interview responses
@@ -452,14 +453,14 @@ function formatCandidateData(profile: EvaluationRequest["candidateProfile"]): st
     parts.push("\n=== INTERVIEW RESPONSES ===");
     profile.interviewResponses.forEach((r, i) => {
       parts.push(`\nQ${i + 1} [${r.type}]: ${r.question}`);
-      parts.push(`A${i + 1}: ${r.response}`);
+      parts.push(`A${i + 1}: ${redactPIIText(r.response)}`);
     });
   }
   
   // Resume text
   if (profile.resumeText) {
     parts.push("\n=== RESUME ===");
-    parts.push(profile.resumeText.substring(0, 5000)); // Limit length
+    parts.push(redactPIIText(profile.resumeText.substring(0, 5000))); // Limit length
   }
   
   return parts.join("\n");

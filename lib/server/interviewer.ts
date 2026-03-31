@@ -1,4 +1,5 @@
 import { envFlags } from "@/lib/env";
+import { redactPIIText } from "@/lib/server/security";
 import type { ChatMessage } from "@/lib/types";
 
 const structuredQuestions = [
@@ -13,7 +14,7 @@ async function askOpenAI(history: ChatMessage[]) {
   if (!process.env.OPENAI_API_KEY) return null;
 
   const transcript = history
-    .map((message) => `${message.role.toUpperCase()}: ${message.content}`)
+    .map((message) => `${message.role.toUpperCase()}: ${redactPIIText(message.content)}`)
     .join("\n");
 
   const prompt = `You are an AI admissions interviewer for inVision U.

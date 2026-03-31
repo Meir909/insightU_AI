@@ -48,8 +48,8 @@ export default function SignUpPage() {
             <div className="space-y-1">
               <p className="text-lg font-black tracking-tight text-white">Официальная регистрация</p>
               <p className="text-sm leading-relaxed text-text-muted">
-                Создайте отдельный аккаунт кандидата или комиссии. Политика конфиденциальности и условия доступны
-                перед регистрацией.
+                Создайте отдельный аккаунт кандидата или комиссии. Политика конфиденциальности и условия использования
+                доступны перед регистрацией и подтверждаются явно.
               </p>
             </div>
           </div>

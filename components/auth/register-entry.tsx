@@ -32,12 +32,16 @@ export function RegisterEntry() {
 
   const submit = async () => {
     if (!accepted) {
-      toast.error("Подтверди согласие с политикой конфиденциальности и условиями.");
+      toast.error("Подтвердите согласие с политикой конфиденциальности и условиями использования.");
       return;
     }
 
     setSubmitting(true);
-    const payload = role === "candidate" ? { role, ...candidate } : { role, ...committee };
+    const payload =
+      role === "candidate"
+        ? { role, ...candidate, acceptedLegal: accepted }
+        : { role, ...committee, acceptedLegal: accepted };
+
     const response = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

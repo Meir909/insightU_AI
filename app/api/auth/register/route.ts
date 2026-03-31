@@ -14,6 +14,7 @@ const candidateSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().regex(/^\+7\d{10}$/, "Use Kazakhstan format: +7XXXXXXXXXX"),
   password: z.string().min(8).max(128),
+  acceptedLegal: z.literal(true),
 });
 
 const committeeSchema = z.object({
@@ -22,6 +23,7 @@ const committeeSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(128),
   accessKey: z.string().min(4),
+  acceptedLegal: z.literal(true),
 });
 
 const registerSchema = z.discriminatedUnion("role", [candidateSchema, committeeSchema]);
@@ -77,6 +79,7 @@ export async function POST(request: NextRequest) {
         role: account.role,
         email: account.email,
         phone: account.phone,
+        acceptedLegal: true,
       },
     });
 

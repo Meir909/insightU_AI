@@ -219,6 +219,32 @@ export function sanitizeString(input: string): string {
     .trim();
 }
 
+export function redactPIIText(input: string): string {
+  return input
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[redacted-email]")
+    .replace(/\+?\d[\d\s().-]{8,}\d/g, "[redacted-phone]")
+    .replace(/\bhttps?:\/\/[^\s]+/gi, "[redacted-link]");
+}
+
+export function redactPIIFromUnknown<T>(value: T): T {
+  if (typeof value === "string") {
+    return redactPIIText(value) as T;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => redactPIIFromUnknown(item)) as T;
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(record).map(([key, item]) => [key, redactPIIFromUnknown(item)]),
+    ) as T;
+  }
+
+  return value;
+}
+
 export function sanitizeObject(obj: Record<string, any>): Record<string, any> {
   if (Array.isArray(obj)) {
     return obj.map((value) =>
