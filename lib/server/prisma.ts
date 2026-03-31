@@ -6,7 +6,12 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
 });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
@@ -309,8 +314,8 @@ export async function getAccountByIdentifier(role: "candidate" | "committee" | "
       OR: [{ email: normalized }, { phone: identifier.trim() }],
     },
     include: {
-      candidate: true,
-      committeeMember: true,
+      candidate: { select: { id: true } },
+      committeeMember: { select: { id: true } },
     },
   });
 }

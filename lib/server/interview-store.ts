@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import type { ChatAttachment, ChatMessage } from "@/lib/types";
 import { getAssistantReply, getInterviewMeta } from "@/lib/server/interviewer";
 import { scoreInterview } from "@/lib/server/interview-scoring";
+import { detectAIContent } from "@/lib/services/ai-detector";
 import {
   addInterviewMessage,
   getCandidateById,
@@ -165,6 +166,19 @@ export async function appendUserMessage(
     aiRiskScore: scoreUpdate.ai_detection_prob * 100,
     status: assistant.completed ? "completed" : "active",
   });
+
+  // On interview completion: run full LLM-based AI detection async (does not block response)
+  if (assistant.completed) {
+    const pureUserMessages = userMessages.filter((m) => !m.startsWith("[Attached evidence]"));
+    detectAIContent(pureUserMessages).then(async (detection) => {
+      // Override aiRiskScore with LLM-enhanced result
+      await updateInterviewProgress(session.sessionId, 100, undefined, {
+        aiRiskScore: Math.round(detection.probability * 100),
+      });
+    }).catch((err) => {
+      console.error("[interview-store] LLM AI detection failed:", err);
+    });
+  }
 
   const refreshed = await getOrCreateSession(session.sessionId, userId, session.candidateName);
 

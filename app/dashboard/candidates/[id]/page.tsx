@@ -93,21 +93,12 @@ export default async function CandidatePage({
                 <ScoreRadar scores={scores} />
               </div>
 
-              <ExplainabilityBlock scores={scores} reasoning={candidate.reasoning} keyQuotes={candidate.key_quotes} />
-
-              <div className="panel-soft p-5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Explainability</p>
-                <h3 className="mt-2 text-xl font-black tracking-tight text-white">{candidate.explainability_v2?.verdict}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-text-secondary">{candidate.explainability_v2?.plainLanguage}</p>
-                <div className="mt-5 grid gap-3">
-                  {candidate.explainability_v2?.evidence.map((item) => (
-                    <div key={item.title} className="panel-muted p-4">
-                      <p className="text-sm font-semibold text-white">{item.title}</p>
-                      <p className="mt-2 text-sm leading-relaxed text-text-secondary">{item.summary}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <ExplainabilityBlock
+                scores={scores}
+                reasoning={candidate.reasoning}
+                keyQuotes={candidate.key_quotes}
+                explainabilityV2={candidate.explainability_v2}
+              />
             </div>
           </div>
 

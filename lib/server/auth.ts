@@ -95,7 +95,7 @@ export function clearAuthCookies(response: NextResponse) {
 }
 
 export function hasBackofficeAccess(role?: string | null) {
-  return role === "committee" || role === "admin" || role === "viewer";
+  return role === "committee";
 }
 
 export function canVote(role?: string | null) {

@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthSession } from "@/lib/server/auth";
-import { getAuthenticatedAccountByToken, getCommitteeMemberByAccountId, recordCommitteeDecision } from "@/lib/server/prisma";
+import {
+  getAuthenticatedAccountByToken,
+  getCommitteeMemberByAccountId,
+  getCandidateVotes,
+  recordCommitteeDecision,
+} from "@/lib/server/prisma";
 import { addSecurityHeaders, sanitizeObject } from "@/lib/server/security";
+import { validateJustification, detectBias, type VoteData } from "@/lib/services/bias-detector";
 
 const schema = z.object({
   candidateId: z.string().min(1),
   decision: z.enum(["approve", "hold", "reject"]),
-  rationale: z.string().min(10).max(600),
+  rationale: z.string().min(30).max(600),
 });
 
 export async function POST(request: NextRequest) {
@@ -16,7 +22,23 @@ export async function POST(request: NextRequest) {
     return addSecurityHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }));
   }
 
-  const payload = schema.parse(sanitizeObject(await request.json()));
+  let payload: z.infer<typeof schema>;
+  try {
+    payload = schema.parse(sanitizeObject(await request.json()));
+  } catch {
+    return addSecurityHeaders(
+      NextResponse.json({ error: "Обоснование должно содержать не менее 30 символов" }, { status: 400 }),
+    );
+  }
+
+  // Validate justification quality (no generic phrases)
+  const justification = validateJustification(payload.rationale);
+  if (!justification.valid) {
+    return addSecurityHeaders(
+      NextResponse.json({ error: justification.issues[0] }, { status: 422 }),
+    );
+  }
+
   const persistedSession = await getAuthenticatedAccountByToken(auth.sessionId);
   if (!persistedSession) {
     return addSecurityHeaders(NextResponse.json({ error: "Session expired" }, { status: 401 }));
@@ -40,10 +62,28 @@ export async function POST(request: NextRequest) {
     userAgent: request.headers.get("user-agent") || undefined,
   });
 
+  // Run bias detection after recording vote (at least 2 votes needed for analysis)
+  const allVotes = await getCandidateVotes(payload.candidateId);
+  let biasCheck = null;
+
+  if (allVotes.length >= 2) {
+    const voteData: VoteData[] = allVotes.map((v) => ({
+      memberId: v.committeeId,
+      memberName: v.committee.name,
+      score: v.formalScore ?? 50,
+      decision: (v.decision === "approved" || v.decision === "rejected" || v.decision === "hold")
+        ? v.decision
+        : "hold",
+      rationale: v.notes ?? "",
+    }));
+    biasCheck = detectBias(voteData);
+  }
+
   return addSecurityHeaders(
     NextResponse.json({
       vote: result.vote,
       resolution: result.resolution,
+      biasCheck,
     }),
   );
 }
