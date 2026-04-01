@@ -31,6 +31,7 @@ type CandidateOverview = {
     goals: string;
     experience: string;
     final_score: number;
+    applicationCompleted: boolean;
   };
   session: {
     progress: number;
@@ -151,6 +152,11 @@ export async function getCandidateAccountOverview(sessionToken: string): Promise
     return null;
   }
 
+  // Determine if application form was submitted (has motivation text or evaluations)
+  const applicationCompleted = Boolean(
+    candidate.whyInVision || candidate.goals || candidate.evaluations?.length > 0
+  );
+
   return {
     account: {
       id: session.account.id,
@@ -167,9 +173,10 @@ export async function getCandidateAccountOverview(sessionToken: string): Promise
       id: candidate.id,
       code: candidate.code,
       status: candidate.status,
-      goals: candidate.goals ?? "Goals will appear after application submission.",
-      experience: candidate.experience ?? "Experience will appear after application submission.",
+      goals: candidate.goals ?? "",
+      experience: candidate.experience ?? "",
       final_score: candidate.overallScore ?? 0,
+      applicationCompleted,
     },
     session: candidate.interviewSession
       ? {

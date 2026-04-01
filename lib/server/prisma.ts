@@ -809,6 +809,21 @@ export async function createEvaluation(data: {
   });
 }
 
+export async function getCandidateEvaluationHistory(candidateId: string) {
+  return prisma.candidateEvaluation.findMany({
+    where: { candidateId },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      overallScore: true,
+      confidence: true,
+      evaluatorType: true,
+      reasoning: true,
+      createdAt: true,
+    },
+  });
+}
+
 // ============================================================================
 // COMMITTEE OPERATIONS
 // ============================================================================

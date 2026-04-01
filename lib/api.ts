@@ -277,3 +277,66 @@ export async function getFairnessSummary(): Promise<FairnessSummary> {
     };
   }
 }
+
+export interface ProactiveTalent {
+  id: string;
+  code: string;
+  name: string;
+  city: string;
+  status: string;
+  final_score: number;
+  leadership: number;
+  growth: number;
+  confidence: number;
+  ai_detection_prob: number;
+  tags: string[];
+  missingSteps: string[];
+}
+
+export async function getProactiveTalents(): Promise<ProactiveTalent[]> {
+  try {
+    const all = await getRanking();
+    return all
+      .filter(
+        (c) =>
+          c.final_score >= 60 &&
+          c.status !== "shortlisted" &&
+          c.status !== "rejected" &&
+          c.status !== "accepted",
+      )
+      .map((c) => {
+        const tags: string[] = [];
+        const missingSteps: string[] = [];
+
+        if (c.leadership >= 70) tags.push("Лидерский потенциал");
+        if (c.growth >= 70) tags.push("Высокий рост");
+        if (c.final_score >= 75) tags.push("Топ-кандидат");
+        if (c.authenticity >= 70) tags.push("Аутентичность");
+        if (c.ai_detection_prob < 0.2) tags.push("Низкий AI риск");
+
+        if (c.status === "in_progress") missingSteps.push("Интервью не завершено");
+        if ((c.status as string) === "pending") missingSteps.push("Ожидает проверки");
+        if (c.needs_manual_review) missingSteps.push("Требует ручной проверки");
+        if (c.confidence < 0.65) missingSteps.push("Низкая уверенность AI");
+
+        return {
+          id: c.id,
+          code: c.code,
+          name: c.name,
+          city: c.city,
+          status: c.status,
+          final_score: c.final_score,
+          leadership: c.leadership,
+          growth: c.growth,
+          confidence: c.confidence,
+          ai_detection_prob: c.ai_detection_prob,
+          tags,
+          missingSteps,
+        };
+      })
+      .sort((a, b) => b.final_score - a.final_score)
+      .slice(0, 20);
+  } catch {
+    return [];
+  }
+}

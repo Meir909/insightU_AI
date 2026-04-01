@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, LogOut, Sparkles, User, BarChart3, Hash } from "lucide-react";
+import { ArrowRight, LogOut, Sparkles, User, BarChart3, Hash, FileText, CheckCircle2, Clock, Users } from "lucide-react";
 import { getCandidateAccountOverview } from "@/lib/server/account-store";
 import {
   AUTH_EMAIL_COOKIE,
@@ -68,6 +68,7 @@ export default async function CandidateAccountPage() {
   const progress = overview.session?.progress ?? 0;
   const isCompleted = progress >= 100;
   const hasStarted = progress > 0;
+  const applicationCompleted = overview.candidate.applicationCompleted;
 
   return (
     <div className="dot-grid min-h-screen bg-bg-base px-4 py-8 lg:px-8">
@@ -94,8 +95,93 @@ export default async function CandidateAccountPage() {
           </form>
         </div>
 
+        {/* Journey Timeline */}
+        <div className="panel-soft p-5">
+          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Ваш путь</p>
+          <div className="flex items-start gap-0">
+            {[
+              {
+                label: "Анкета",
+                icon: FileText,
+                done: applicationCompleted,
+                active: !applicationCompleted,
+              },
+              {
+                label: "Интервью",
+                icon: Sparkles,
+                done: isCompleted,
+                active: applicationCompleted && !isCompleted,
+              },
+              {
+                label: "AI-анализ",
+                icon: BarChart3,
+                done: isCompleted,
+                active: false,
+              },
+              {
+                label: "Комиссия",
+                icon: Users,
+                done: overview.candidate.status === "approved" || overview.candidate.status === "shortlisted",
+                active: false,
+              },
+              {
+                label: "Решение",
+                icon: CheckCircle2,
+                done: overview.candidate.status === "approved",
+                active: false,
+              },
+            ].map((step, idx, arr) => {
+              const Icon = step.icon;
+              return (
+                <div key={step.label} className="flex flex-1 flex-col items-center">
+                  <div className="flex w-full items-center">
+                    <div
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-xs transition-all mx-auto ${
+                        step.done
+                          ? "border-brand-green bg-brand-green text-black"
+                          : step.active
+                            ? "border-brand-green bg-brand-green/10 text-brand-green"
+                            : "border-white/15 text-text-muted"
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                    </div>
+                  </div>
+                  <p className={`mt-2 text-center text-[10px] font-semibold ${step.active ? "text-brand-green" : step.done ? "text-white" : "text-text-muted"}`}>
+                    {step.label}
+                  </p>
+                  {idx < arr.length - 1 && (
+                    <div className={`absolute h-px w-full top-4 left-1/2 ${step.done ? "bg-brand-green" : "bg-white/10"}`} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* CTA Block */}
-        {!isCompleted ? (
+        {!applicationCompleted ? (
+          <div className="relative overflow-hidden rounded-xl border border-brand-green/30 bg-brand-green/5 p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-brand-green" />
+                  <p className="text-sm font-semibold text-brand-green">Заполните анкету кандидата</p>
+                </div>
+                <p className="mt-1 text-xs text-text-secondary">
+                  Анкета позволяет AI лучше понять ваш потенциал. Займёт около 5 минут.
+                </p>
+              </div>
+              <Link
+                href="/apply"
+                className="flex shrink-0 items-center gap-2 rounded-lg bg-brand-green px-5 py-2.5 text-sm font-bold text-black transition hover:bg-brand-green/90"
+              >
+                Заполнить анкету
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        ) : !isCompleted ? (
           <div className="relative overflow-hidden rounded-xl border border-brand-green/30 bg-brand-green/5 p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex-1">

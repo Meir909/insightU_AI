@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BarChart3, ChevronRight, LayoutDashboard, Star, Zap } from "lucide-react";
+import { BarChart3, ChevronRight, LayoutDashboard, Star, Zap, Radar } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SessionControls } from "@/components/auth/session-controls";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Обзор", icon: LayoutDashboard },
+  { href: "/dashboard/talents", label: "Таланты", icon: Radar },
   { href: "/dashboard/shortlist", label: "Шорт-лист", icon: Star },
   { href: "/dashboard/analytics", label: "Аналитика", icon: BarChart3 },
 ];

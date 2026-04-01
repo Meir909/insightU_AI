@@ -8,6 +8,7 @@ import {
   submitCandidateApplication,
 } from "@/lib/server/prisma";
 import { addSecurityHeaders, sanitizeObject } from "@/lib/server/security";
+import { analyzeMotivationTexts } from "@/lib/services/motivation-analyzer";
 
 const applicationSchema = z.object({
   // Personal info
@@ -106,6 +107,14 @@ export async function POST(request: NextRequest) {
       ipAddress: request.headers.get("x-forwarded-for")?.split(",")[0] || undefined,
       userAgent: request.headers.get("user-agent") || undefined,
     });
+
+    // Fire-and-forget LLM motivation analysis (does not block response)
+    void analyzeMotivationTexts({
+      candidateId: candidate.id,
+      whyVisionU: application.motivation.whyVisionU,
+      goals: application.motivation.goals,
+      changeAgentVision: application.motivation.changeAgentVision,
+    }).catch((err) => console.error("[application] motivation analysis failed:", err));
 
     return addSecurityHeaders(
       NextResponse.json({
