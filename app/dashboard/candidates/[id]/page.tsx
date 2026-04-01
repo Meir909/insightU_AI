@@ -64,10 +64,11 @@ export default async function CandidatePage({
             ← Назад к пулу кандидатов
           </Link>
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-3xl font-black tracking-tight text-white">{candidate.code}</h2>
+            <h2 className="text-3xl font-black tracking-tight text-white">{candidate.name || candidate.code}</h2>
+            <span className="font-mono text-sm text-brand-green">{candidate.code}</span>
             <StatusBadge status={candidate.status} />
           </div>
-          <p className="text-sm text-text-secondary">{candidate.city} • {candidate.program} • анонимизированный профиль</p>
+          <p className="text-sm text-text-secondary">{candidate.city} • {candidate.program}</p>
         </div>
       </div>
 

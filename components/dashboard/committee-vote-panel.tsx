@@ -2,7 +2,7 @@
 
 import { AlertTriangle, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import type { Candidate, CommitteeVoteDecision } from "@/lib/types";
 
@@ -18,6 +18,12 @@ const DECISION_COLORS: Record<CommitteeVoteDecision, string> = {
   reject: "border border-red-500/40 bg-red-500/10 text-red-400",
 };
 
+const DECISION_BADGE: Record<CommitteeVoteDecision, string> = {
+  approve: "border border-brand-green/30 bg-brand-green/8 text-brand-green",
+  hold: "border border-yellow-500/20 bg-yellow-500/6 text-yellow-400",
+  reject: "border border-red-500/20 bg-red-500/6 text-red-400",
+};
+
 const MIN_CHARS = 30;
 
 export function CommitteeVotePanel({ candidate }: { candidate: Candidate }) {
@@ -26,6 +32,23 @@ export function CommitteeVotePanel({ candidate }: { candidate: Candidate }) {
   const [rationale, setRationale] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [biasWarning, setBiasWarning] = useState<string | null>(null);
+  const [myPriorVote, setMyPriorVote] = useState<CommitteeVoteDecision | null>(null);
+
+  // Detect current user and find existing vote
+  useEffect(() => {
+    void fetch("/api/auth/session", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        const id = data?.session?.entityId as string | undefined;
+        if (!id) return;
+        const existing = candidate.committee_review?.votes.find((v) => v.memberId === id);
+        if (existing) {
+          setMyPriorVote(existing.decision);
+          setDecision(existing.decision);
+          setRationale(existing.rationale);
+        }
+      });
+  }, [candidate]);
 
   const charCount = rationale.trim().length;
   const isReady = charCount >= MIN_CHARS;
@@ -38,11 +61,7 @@ export function CommitteeVotePanel({ candidate }: { candidate: Candidate }) {
       const response = await fetch("/api/committee/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          candidateId: candidate.id,
-          decision,
-          rationale,
-        }),
+        body: JSON.stringify({ candidateId: candidate.id, decision, rationale }),
       });
       const data = await response.json();
 
@@ -51,13 +70,12 @@ export function CommitteeVotePanel({ candidate }: { candidate: Candidate }) {
         return;
       }
 
-      // Show bias anomaly warning if detected
       if (data.biasCheck?.hasAnomaly) {
         setBiasWarning(data.biasCheck.details);
       }
 
-      toast.success("Голос комиссии сохранён");
-      setRationale("");
+      toast.success(myPriorVote ? "Голос обновлён" : "Голос комиссии сохранён");
+      setMyPriorVote(decision);
       router.refresh();
     } catch {
       toast.error("Ошибка сети — попробуйте снова");
@@ -68,10 +86,27 @@ export function CommitteeVotePanel({ candidate }: { candidate: Candidate }) {
 
   return (
     <div className="rounded-[24px] border border-white/6 bg-bg-surface p-5">
-      <div className="mb-4 flex items-center gap-2">
-        <span className="h-3 w-1 rounded-full bg-brand-green" />
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Committee vote</p>
+      {/* Header */}
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="h-3 w-1 rounded-full bg-brand-green" />
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Голос комиссии</p>
+        </div>
+        {myPriorVote && (
+          <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${DECISION_BADGE[myPriorVote]}`}>
+            Ваш голос: {DECISION_LABELS[myPriorVote]}
+          </span>
+        )}
       </div>
+
+      {/* Prior vote notice */}
+      {myPriorVote && (
+        <div className="mb-4 rounded-2xl border border-brand-green/15 bg-brand-green/5 px-4 py-3">
+          <p className="text-xs text-text-secondary">
+            Вы уже проголосовали. Можно изменить голос — будет обновлён автоматически.
+          </p>
+        </div>
+      )}
 
       {/* Decision buttons */}
       <div className="grid grid-cols-3 gap-2">
@@ -106,7 +141,6 @@ export function CommitteeVotePanel({ candidate }: { candidate: Candidate }) {
                 : "border-white/8 focus:border-brand-green/25"
           }`}
         />
-        {/* Character count + hint */}
         <div className="mt-1.5 flex items-center justify-between px-1">
           {charCount > 0 && !isReady ? (
             <p className="text-[11px] text-yellow-400">
@@ -126,7 +160,7 @@ export function CommitteeVotePanel({ candidate }: { candidate: Candidate }) {
         </div>
       </div>
 
-      {/* Bias anomaly warning (shown after vote) */}
+      {/* Bias anomaly warning */}
       {biasWarning && (
         <div className="mt-4 flex gap-3 rounded-2xl border border-yellow-500/20 bg-yellow-500/8 p-4">
           <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-yellow-400" />
@@ -143,11 +177,11 @@ export function CommitteeVotePanel({ candidate }: { candidate: Candidate }) {
         onClick={submitVote}
         className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-brand-green px-5 py-3 text-sm font-bold text-black transition-all duration-150 hover:bg-brand-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-green/35 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {submitting ? "Сохраняю..." : "Сохранить голос"}
+        {submitting ? "Сохраняю..." : myPriorVote ? "Обновить голос" : "Сохранить голос"}
       </button>
 
       <p className="mt-3 text-center text-[10px] leading-relaxed text-text-muted">
-        Голос записывается в систему аудита. Система автоматически проверяет паттерны голосования на аномалии.
+        Голос записывается в систему аудита. Система автоматически проверяет паттерны на аномалии.
       </p>
     </div>
   );

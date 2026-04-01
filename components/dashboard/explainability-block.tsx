@@ -48,7 +48,7 @@ export function ExplainabilityBlock({
   return (
     <div className="rounded-[28px] border border-white/6 bg-bg-surface p-5">
       <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">
-        Explainability · Прозрачность оценки
+        Прозрачность оценки
       </p>
 
       {/* Tab selector */}
@@ -89,14 +89,6 @@ export function ExplainabilityBlock({
                 index={index}
               />
             ))}
-            {reasoning && (
-              <div className="rounded-2xl border border-white/6 bg-bg-elevated p-4">
-                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                  Обоснование системы
-                </p>
-                <p className="text-xs leading-relaxed text-text-secondary">{reasoning}</p>
-              </div>
-            )}
           </motion.div>
         )}
 
@@ -278,6 +270,16 @@ export function ExplainabilityBlock({
         )}
 
       </AnimatePresence>
+
+      {/* Reasoning — always visible if present */}
+      {reasoning && (
+        <div className="mt-4 rounded-2xl border border-white/6 bg-bg-elevated p-4">
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+            Заключение AI
+          </p>
+          <p className="text-xs leading-relaxed text-text-secondary">{reasoning}</p>
+        </div>
+      )}
     </div>
   );
 }

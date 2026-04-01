@@ -41,13 +41,14 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
 
   return (
     <div className="overflow-hidden rounded-[28px] border border-white/6 bg-bg-surface">
+      {/* Toolbar */}
       <div className="flex flex-col gap-3 border-b border-white/6 p-4 md:flex-row md:items-center md:justify-between">
         <div className="relative w-full md:max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Поиск по коду, городу или программе"
+            placeholder="Поиск по имени, коду, городу..."
             className="w-full rounded-2xl border border-white/6 bg-bg-elevated py-2.5 pl-10 pr-4 text-sm text-white outline-none transition-colors placeholder:text-text-muted focus:border-brand-green/25 focus-visible:ring-2 focus-visible:ring-brand-green/30"
           />
         </div>
@@ -62,7 +63,8 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
         </button>
       </div>
 
-      <div className="divide-y divide-white/6">
+      {/* Desktop list */}
+      <div className="hidden divide-y divide-white/6 md:block">
         {filtered.map((candidate, index) => {
           const review = candidate.committee_review;
           const aiRisk = Math.round(candidate.ai_detection_prob * 100);
@@ -76,7 +78,7 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
               transition={{ delay: index * 0.02 }}
               whileTap={{ scale: 0.995 }}
               onClick={() => router.push(`/dashboard/candidates/${candidate.id}`)}
-              className="group flex w-full flex-col gap-4 px-4 py-4 text-left transition-all duration-150 hover:bg-white/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-green/35 active:bg-white/[0.03] md:flex-row md:items-center md:justify-between"
+              className="group flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition-all duration-150 hover:bg-white/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-green/35 active:bg-white/[0.03]"
             >
               <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-brand-green/20 bg-brand-green/10 font-mono text-xs font-bold text-brand-green">
@@ -84,7 +86,10 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-sm font-semibold text-white">{candidate.code}</p>
+                    <p className="truncate text-sm font-semibold text-white">
+                      {candidate.name || candidate.code}
+                    </p>
+                    <span className="font-mono text-xs text-text-muted">{candidate.code}</span>
                     <StatusBadge status={candidate.status} />
                   </div>
                   <p className="truncate text-xs text-text-secondary">
@@ -93,7 +98,7 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 md:justify-end">
+              <div className="flex shrink-0 items-center gap-2">
                 <MetricPill value={candidate.final_score.toFixed(1)} />
                 <MetricPill value={`${Math.round(candidate.confidence * 100)}% доверие`} tone="amber" />
                 <MetricPill value={`${review?.approvedCount ?? 0}/${review?.requiredApprovals ?? 3} голосов`} />
@@ -105,7 +110,49 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
         })}
       </div>
 
-      <div className="px-4 py-3 text-xs text-text-muted">Показано {filtered.length} из {candidates.length} кандидатов</div>
+      {/* Mobile card grid */}
+      <div className="grid gap-3 p-3 md:hidden">
+        {filtered.map((candidate, index) => {
+          const review = candidate.committee_review;
+          const aiRisk = Math.round(candidate.ai_detection_prob * 100);
+
+          return (
+            <motion.button
+              key={candidate.id}
+              type="button"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => router.push(`/dashboard/candidates/${candidate.id}`)}
+              className="group w-full rounded-2xl border border-white/6 bg-bg-elevated p-4 text-left transition-all hover:border-brand-green/20 hover:bg-white/[0.03]"
+            >
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-bold text-white">{candidate.name || candidate.code}</p>
+                  <p className="mt-0.5 font-mono text-xs text-brand-green">{candidate.code}</p>
+                  <p className="mt-1 text-xs text-text-secondary">{candidate.city} • {candidate.program}</p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  <StatusBadge status={candidate.status} />
+                  <span className="font-mono text-lg font-black text-brand-green">
+                    {candidate.final_score.toFixed(1)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <MetricPill value={`${Math.round(candidate.confidence * 100)}% доверие`} tone="amber" />
+                <MetricPill value={`${review?.approvedCount ?? 0}/${review?.requiredApprovals ?? 3} голосов`} />
+                <MetricPill value={`AI ${aiRisk}%`} tone={aiRisk >= 70 ? "red" : aiRisk >= 40 ? "amber" : "green"} />
+              </div>
+            </motion.button>
+          );
+        })}
+      </div>
+
+      <div className="px-4 py-3 text-xs text-text-muted">
+        Показано {filtered.length} из {candidates.length} кандидатов
+      </div>
     </div>
   );
 }
