@@ -95,9 +95,9 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
 
               <div className="flex flex-wrap items-center gap-2 md:justify-end">
                 <MetricPill value={candidate.final_score.toFixed(1)} />
-                <MetricPill value={`${Math.round(candidate.confidence * 100)}% trust`} tone="amber" />
-                <MetricPill value={`${review?.approvedCount ?? 0}/${review?.requiredApprovals ?? 3} review`} />
-                <MetricPill value={`${aiRisk}% AI`} tone={aiRisk >= 70 ? "red" : aiRisk >= 40 ? "amber" : "green"} />
+                <MetricPill value={`${Math.round(candidate.confidence * 100)}% доверие`} tone="amber" />
+                <MetricPill value={`${review?.approvedCount ?? 0}/${review?.requiredApprovals ?? 3} голосов`} />
+                <MetricPill value={`AI ${aiRisk}%`} tone={aiRisk >= 70 ? "red" : aiRisk >= 40 ? "amber" : "green"} />
                 <ChevronRight className="h-4 w-4 text-text-muted transition-transform duration-150 group-hover:translate-x-0.5" />
               </div>
             </motion.button>

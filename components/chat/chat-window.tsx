@@ -26,7 +26,7 @@ export function ChatWindow({
         {loading ? (
           <div className="flex justify-start">
             <div className="rounded-[20px] border border-white/6 bg-white/[0.03] px-4 py-3 text-sm text-text-secondary">
-              AI is thinking...
+              AI думает...
             </div>
           </div>
         ) : null}

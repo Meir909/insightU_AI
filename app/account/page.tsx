@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { GreenButton } from "@/components/ui/green-button";
+import Link from "next/link";
+import { ArrowRight, LogOut, Sparkles, User, BarChart3, Hash } from "lucide-react";
 import { getCandidateAccountOverview } from "@/lib/server/account-store";
 import {
   AUTH_EMAIL_COOKIE,
@@ -11,6 +12,38 @@ import {
   AUTH_SESSION_COOKIE,
   parseAuthSession,
 } from "@/lib/server/auth";
+
+function statusLabel(status: string) {
+  switch (status) {
+    case "pending": return "Ожидает рассмотрения";
+    case "shortlisted": return "В шорт-листе";
+    case "approved": return "Одобрен";
+    case "rejected": return "Отклонён";
+    case "flagged": return "На проверке";
+    default: return status;
+  }
+}
+
+function statusColor(status: string) {
+  switch (status) {
+    case "approved": return "text-brand-green";
+    case "shortlisted": return "text-brand-green";
+    case "rejected": return "text-red-400";
+    case "flagged": return "text-yellow-400";
+    default: return "text-text-secondary";
+  }
+}
+
+function phaseLabel(phase: string | null | undefined) {
+  if (!phase) return "Не начато";
+  switch (phase) {
+    case "Foundation": return "Знакомство";
+    case "Leadership and motivation": return "Лидерство и мотивация";
+    case "Adaptive deep dive": return "Углублённый анализ";
+    case "Interview completed": return "Интервью завершено";
+    default: return phase;
+  }
+}
 
 export default async function CandidateAccountPage() {
   const cookieStore = await cookies();
@@ -32,54 +65,141 @@ export default async function CandidateAccountPage() {
     redirect("/sign-in");
   }
 
+  const progress = overview.session?.progress ?? 0;
+  const isCompleted = progress >= 100;
+  const hasStarted = progress > 0;
+
   return (
     <div className="dot-grid min-h-screen bg-bg-base px-4 py-8 lg:px-8">
       <div className="page-shell space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+
+        {/* Header */}
+        <div className="flex items-start justify-between">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Candidate cabinet</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Личный кабинет</p>
             <h1 className="mt-1 text-3xl font-black tracking-tight text-white">{overview.account.name}</h1>
-            <p className="mt-2 text-sm text-text-secondary">
+            <p className="mt-1 text-sm text-text-secondary">
               {overview.account.phone}
-              {overview.account.email ? ` • ${overview.account.email}` : ""}
+              {overview.account.email ? ` · ${overview.account.email}` : ""}
             </p>
           </div>
-          <GreenButton href="/interview">Continue interview</GreenButton>
+          <form action="/api/auth/logout" method="POST">
+            <button
+              type="submit"
+              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-text-secondary transition hover:border-white/20 hover:text-white"
+            >
+              <LogOut className="h-4 w-4" />
+              Выйти
+            </button>
+          </form>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-3">
-          <div className="panel-soft p-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Application status</p>
-            <p className="mt-3 text-2xl font-black text-white">{overview.candidate.status}</p>
-            <p className="mt-2 text-sm text-text-secondary">Candidate code: {overview.candidate.code}</p>
+        {/* CTA Block */}
+        {!isCompleted ? (
+          <div className="relative overflow-hidden rounded-xl border border-brand-green/30 bg-brand-green/5 p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-brand-green" />
+                  <p className="text-sm font-semibold text-brand-green">
+                    {hasStarted ? "Продолжите интервью" : "Начните AI-интервью"}
+                  </p>
+                </div>
+                <p className="mt-1 text-xs text-text-secondary">
+                  {hasStarted
+                    ? `Пройдено ${progress}% · ${phaseLabel(overview.session?.phase)}`
+                    : "Интервью занимает около 10 минут. Отвечайте честно и развёрнуто."}
+                </p>
+                {/* Progress bar */}
+                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-brand-green transition-all duration-500"
+                    style={{ width: `${Math.max(progress, hasStarted ? 4 : 0)}%` }}
+                  />
+                </div>
+              </div>
+              <Link
+                href="/interview"
+                className="flex shrink-0 items-center gap-2 rounded-lg bg-brand-green px-5 py-2.5 text-sm font-bold text-black transition hover:bg-brand-green/90"
+              >
+                {hasStarted ? "Продолжить" : "Начать"}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
-          <div className="panel-soft p-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Interview progress</p>
-            <p className="mt-3 text-2xl font-black text-white">{overview.session?.progress ?? 0}%</p>
-            <p className="mt-2 text-sm text-text-secondary">Phase: {overview.session?.phase ?? "Not started"}</p>
+        ) : (
+          <div className="rounded-xl border border-brand-green/40 bg-brand-green/10 p-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-green/20">
+                <Sparkles className="h-5 w-5 text-brand-green" />
+              </div>
+              <div>
+                <p className="font-bold text-white">Интервью завершено</p>
+                <p className="mt-0.5 text-sm text-text-secondary">
+                  Ваши ответы переданы на оценку комиссии. Итоговое решение принимает только комиссия inVision U.
+                </p>
+              </div>
+            </div>
           </div>
+        )}
+
+        {/* Stats Grid */}
+        <div className="grid gap-4 sm:grid-cols-3">
           <div className="panel-soft p-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Current score</p>
-            <p className="mt-3 text-2xl font-black text-brand-green">{overview.candidate.final_score.toFixed(1)}</p>
-            <p className="mt-2 text-sm text-text-secondary">
-              Candidate sees only progress. Final decision stays with the committee.
+            <div className="flex items-center gap-2">
+              <User className="h-3.5 w-3.5 text-text-muted" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Статус заявки</p>
+            </div>
+            <p className={`mt-3 text-xl font-black ${statusColor(overview.candidate.status)}`}>
+              {statusLabel(overview.candidate.status)}
             </p>
+            <p className="mt-1.5 text-xs text-text-muted">Обновляется после рассмотрения комиссией</p>
+          </div>
+
+          <div className="panel-soft p-5">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-3.5 w-3.5 text-text-muted" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Прогресс интервью</p>
+            </div>
+            <p className="mt-3 text-xl font-black text-white">{progress}%</p>
+            <p className="mt-1.5 text-xs text-text-muted">{phaseLabel(overview.session?.phase)}</p>
+          </div>
+
+          <div className="panel-soft p-5">
+            <div className="flex items-center gap-2">
+              <Hash className="h-3.5 w-3.5 text-text-muted" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Код кандидата</p>
+            </div>
+            <p className="mt-3 font-mono text-xl font-black text-brand-green">{overview.candidate.code}</p>
+            <p className="mt-1.5 text-xs text-text-muted">Укажите при обращении в поддержку</p>
           </div>
         </div>
 
-        <div className="panel-soft p-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Profile summary</p>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div className="panel-muted p-4">
-              <p className="text-sm font-semibold text-white">Goals</p>
-              <p className="mt-2 text-sm leading-relaxed text-text-secondary">{overview.candidate.goals}</p>
-            </div>
-            <div className="panel-muted p-4">
-              <p className="text-sm font-semibold text-white">Experience</p>
-              <p className="mt-2 text-sm leading-relaxed text-text-secondary">{overview.candidate.experience}</p>
+        {/* Profile Summary */}
+        {(overview.candidate.goals || overview.candidate.experience) && (
+          <div className="panel-soft p-6">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Профиль</p>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {overview.candidate.goals && (
+                <div className="panel-muted p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Цели</p>
+                  <p className="mt-2 text-sm leading-relaxed text-text-secondary">{overview.candidate.goals}</p>
+                </div>
+              )}
+              {overview.candidate.experience && (
+                <div className="panel-muted p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">Опыт</p>
+                  <p className="mt-2 text-sm leading-relaxed text-text-secondary">{overview.candidate.experience}</p>
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Footer note */}
+        <p className="text-center text-xs text-text-muted">
+          AI-оценка носит рекомендательный характер. Итоговое решение остаётся за комиссией inVision U.
+        </p>
       </div>
     </div>
   );

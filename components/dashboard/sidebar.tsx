@@ -25,7 +25,7 @@ export function Sidebar() {
           </div>
           <div>
             <p className="text-sm font-black tracking-tight text-white">InsightU AI</p>
-            <p className="text-[11px] text-text-muted">Admissions dashboard</p>
+            <p className="text-[11px] text-text-muted">Панель отбора · inVision U</p>
           </div>
         </div>
       </div>

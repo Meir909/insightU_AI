@@ -13,7 +13,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <section className="space-y-3">
-        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Overview</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Обзор · inVision U</p>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h2 className="text-3xl font-black tracking-tight text-white">Комиссионная панель отбора</h2>
@@ -35,7 +35,7 @@ export default async function DashboardPage() {
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Candidate pool</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Пул кандидатов</p>
             <h3 className="mt-1 text-2xl font-black tracking-tight text-white">Ранжированный список кандидатов</h3>
           </div>
           <CandidateTable candidates={candidates} />
