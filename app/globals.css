@@ -277,3 +277,58 @@ a {
   animation: shimmer 1.6s ease-in-out infinite;
   border-radius: 8px;
 }
+
+/* Inline field error message */
+.field-error {
+  font-size: 11px;
+  color: #e53935;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.4;
+}
+
+/* iPhone safe area bottom padding */
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* Tab bar component */
+.tab-bar {
+  display: flex;
+  gap: 2px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 3px;
+}
+
+.tab-bar-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 13px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #606060;
+  cursor: pointer;
+  transition: all 150ms ease;
+  border: none;
+  background: transparent;
+}
+
+.tab-bar-item:hover {
+  color: #b0b0b0;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tab-bar-item.active {
+  background: rgba(18, 18, 18, 0.95);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}

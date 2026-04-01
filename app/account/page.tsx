@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, LogOut, Sparkles, User, BarChart3, Hash, FileText, CheckCircle2, Clock, Users } from "lucide-react";
+import { ArrowRight, LogOut, Shield, Sparkles, User, BarChart3, Hash, FileText, CheckCircle2, Clock, Users } from "lucide-react";
 import { getCandidateAccountOverview } from "@/lib/server/account-store";
 import {
   AUTH_EMAIL_COOKIE,
@@ -75,14 +75,20 @@ export default async function CandidateAccountPage() {
       <div className="page-shell space-y-6">
 
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Личный кабинет</p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-white">{overview.account.name}</h1>
-            <p className="mt-1 text-sm text-text-secondary">
-              {overview.account.phone}
-              {overview.account.email ? ` · ${overview.account.email}` : ""}
-            </p>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {/* Avatar initials */}
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-green text-xl font-black text-black shadow-green-sm">
+              {overview.account.name.slice(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Личный кабинет</p>
+              <h1 className="mt-0.5 text-2xl font-black tracking-tight text-white">{overview.account.name}</h1>
+              <p className="mt-0.5 text-sm text-text-secondary">
+                {overview.account.phone}
+                {overview.account.email ? ` · ${overview.account.email}` : ""}
+              </p>
+            </div>
           </div>
           <form action="/api/auth/logout" method="POST">
             <button
@@ -239,7 +245,8 @@ export default async function CandidateAccountPage() {
 
         {/* Stats Grid */}
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="panel-soft p-5">
+          <div className="panel-soft relative overflow-hidden p-5">
+            <div className="absolute left-0 top-0 h-full w-0.5 rounded-full bg-status-mid/50" />
             <div className="flex items-center gap-2">
               <User className="h-3.5 w-3.5 text-text-muted" />
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Статус заявки</p>
@@ -250,7 +257,8 @@ export default async function CandidateAccountPage() {
             <p className="mt-1.5 text-xs text-text-muted">Обновляется после рассмотрения комиссией</p>
           </div>
 
-          <div className="panel-soft p-5">
+          <div className="panel-soft overflow-hidden p-5 relative">
+            <div className="absolute left-0 top-0 h-full w-0.5 rounded-full bg-brand-green/50" />
             <div className="flex items-center gap-2">
               <BarChart3 className="h-3.5 w-3.5 text-text-muted" />
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Прогресс интервью</p>
@@ -259,7 +267,8 @@ export default async function CandidateAccountPage() {
             <p className="mt-1.5 text-xs text-text-muted">{phaseLabel(overview.session?.phase)}</p>
           </div>
 
-          <div className="panel-soft p-5">
+          <div className="panel-soft overflow-hidden p-5 relative">
+            <div className="absolute left-0 top-0 h-full w-0.5 rounded-full bg-status-ai/50" />
             <div className="flex items-center gap-2">
               <Hash className="h-3.5 w-3.5 text-text-muted" />
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Код кандидата</p>
@@ -291,7 +300,8 @@ export default async function CandidateAccountPage() {
         )}
 
         {/* Footer note */}
-        <p className="text-center text-xs text-text-muted">
+        <p className="flex items-center justify-center gap-1.5 text-center text-xs text-text-muted">
+          <Shield className="h-3 w-3" />
           AI-оценка носит рекомендательный характер. Итоговое решение остаётся за комиссией inVision U.
         </p>
       </div>

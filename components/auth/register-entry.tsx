@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LoaderCircle, LockKeyhole, UserRound } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LoaderCircle, LockKeyhole, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -29,6 +29,8 @@ export function RegisterEntry() {
   const [committee, setCommittee] = useState(defaultCommittee);
   const [accepted, setAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showCandidatePassword, setShowCandidatePassword] = useState(false);
+  const [showCommitteePassword, setShowCommitteePassword] = useState(false);
 
   const submit = async () => {
     if (!accepted) {
@@ -90,6 +92,8 @@ export function RegisterEntry() {
               value={candidate.name}
               onChange={(event) => setCandidate((current) => ({ ...current, name: event.target.value }))}
               className="auth-input"
+              placeholder="Иван Иванов"
+              autoComplete="name"
             />
           </Field>
           <div className="grid gap-4 md:grid-cols-2">
@@ -98,6 +102,8 @@ export function RegisterEntry() {
                 value={candidate.phone}
                 onChange={(event) => setCandidate((current) => ({ ...current, phone: event.target.value }))}
                 className="auth-input"
+                placeholder="+77071234567"
+                autoComplete="tel"
               />
             </Field>
             <Field label="Email">
@@ -105,16 +111,31 @@ export function RegisterEntry() {
                 value={candidate.email}
                 onChange={(event) => setCandidate((current) => ({ ...current, email: event.target.value }))}
                 className="auth-input"
+                placeholder="example@mail.com"
+                autoComplete="email"
               />
             </Field>
           </div>
           <Field label="Пароль">
-            <input
-              type="password"
-              value={candidate.password}
-              onChange={(event) => setCandidate((current) => ({ ...current, password: event.target.value }))}
-              className="auth-input"
-            />
+            <div className="relative">
+              <input
+                type={showCandidatePassword ? "text" : "password"}
+                value={candidate.password}
+                onChange={(event) => setCandidate((current) => ({ ...current, password: event.target.value }))}
+                className="auth-input pr-12"
+                placeholder="Не менее 8 символов"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCandidatePassword((v) => !v)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary focus:outline-none"
+                tabIndex={-1}
+                aria-label={showCandidatePassword ? "Скрыть пароль" : "Показать пароль"}
+              >
+                {showCandidatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </Field>
         </div>
       ) : (
@@ -124,6 +145,8 @@ export function RegisterEntry() {
               value={committee.name}
               onChange={(event) => setCommittee((current) => ({ ...current, name: event.target.value }))}
               className="auth-input"
+              placeholder="Алия Нурланова"
+              autoComplete="name"
             />
           </Field>
           <Field label="Рабочий email">
@@ -131,16 +154,30 @@ export function RegisterEntry() {
               value={committee.email}
               onChange={(event) => setCommittee((current) => ({ ...current, email: event.target.value }))}
               className="auth-input"
+              autoComplete="email"
             />
           </Field>
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Пароль">
-              <input
-                type="password"
-                value={committee.password}
-                onChange={(event) => setCommittee((current) => ({ ...current, password: event.target.value }))}
-                className="auth-input"
-              />
+              <div className="relative">
+                <input
+                  type={showCommitteePassword ? "text" : "password"}
+                  value={committee.password}
+                  onChange={(event) => setCommittee((current) => ({ ...current, password: event.target.value }))}
+                  className="auth-input pr-12"
+                  placeholder="Не менее 8 символов"
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCommitteePassword((v) => !v)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary focus:outline-none"
+                  tabIndex={-1}
+                  aria-label={showCommitteePassword ? "Скрыть пароль" : "Показать пароль"}
+                >
+                  {showCommitteePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </Field>
             <Field label="Код доступа комиссии">
               <input
@@ -182,8 +219,8 @@ export function RegisterEntry() {
         disabled={submitting}
         className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-green px-5 py-4 text-base font-bold text-black transition-all hover:bg-brand-dim hover:shadow-green-sm active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {submitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-        Создать аккаунт
+        {submitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+        {submitting ? "Создаём аккаунт..." : "Создать аккаунт"}
       </button>
 
       <p className="text-sm text-text-secondary">

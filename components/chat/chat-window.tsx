@@ -19,7 +19,7 @@ export function ChatWindow({
 
   return (
     <div className="panel-soft grain p-4">
-      <div className="flex h-[58vh] flex-col gap-4 overflow-y-auto pr-1">
+      <div className="flex h-[62vh] flex-col gap-4 overflow-y-auto pr-1 xl:h-[58vh]">
         {messages.map((message) => (
           <MessageBubble key={message.id} message={message} />
         ))}

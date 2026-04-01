@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { BotMessageSquare, CheckCircle2, ShieldCheck, Sparkles, ArrowLeft } from "lucide-react";
+import { BotMessageSquare, CheckCircle2, MessageSquare, ShieldCheck, Sparkles, TrendingUp, ArrowLeft } from "lucide-react";
 import { SessionControls } from "@/components/auth/session-controls";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { InputBox } from "@/components/chat/input-box";
 import { ScorePill } from "@/components/chat/score-pill";
 import { useChat } from "@/hooks/use-chat";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 function phaseLabel(phase: string | undefined) {
   switch (phase) {
@@ -42,6 +44,105 @@ function CompletionBanner() {
   );
 }
 
+function ProgressSidebar({
+  progress,
+  phase,
+  isCompleted,
+  scoreUpdate,
+}: {
+  progress: number;
+  phase: string | undefined;
+  isCompleted: boolean;
+  scoreUpdate: ReturnType<typeof useChat>["scoreUpdate"];
+}) {
+  return (
+    <div className="space-y-4">
+      {/* Progress card */}
+      <div className="panel-soft p-5">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-brand-green p-2.5 text-black">
+            <BotMessageSquare className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white">
+              {isCompleted ? "Завершено" : "В процессе"}
+            </p>
+            <p className="text-xs text-text-muted">{phaseLabel(phase)}</p>
+          </div>
+        </div>
+
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/8">
+          <div
+            className="h-full rounded-full bg-brand-green transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="font-mono text-sm text-brand-green">{progress}%</span>
+          <span className="text-xs text-text-muted">из 100%</span>
+        </div>
+      </div>
+
+      {/* Scoring panel */}
+      <div className="panel-soft p-5">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-brand-green/10 p-2.5 text-brand-green">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white">Промежуточная оценка</p>
+            <p className="text-xs text-text-muted">Обновляется после каждого ответа</p>
+          </div>
+        </div>
+
+        {scoreUpdate ? (
+          <div className="mt-4 space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              <ScorePill label="Итог" value={scoreUpdate.final_score} />
+              <ScorePill label="Доверие" value={`${Math.round(scoreUpdate.confidence * 100)}%`} />
+              <ScorePill label="AI риск" value={`${Math.round(scoreUpdate.ai_detection_prob * 100)}%`} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <ScorePill label="Аналитика" value={scoreUpdate.cognitive} />
+              <ScorePill label="Лидерство" value={scoreUpdate.leadership} />
+              <ScorePill label="Рост" value={scoreUpdate.growth} />
+              <ScorePill label="Решения" value={scoreUpdate.decision} />
+            </div>
+
+            <div className="panel-muted p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">Рекомендация AI</p>
+              <p className="mt-2 text-sm font-semibold text-white">{scoreUpdate.recommendation}</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">{scoreUpdate.explanation}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-text-muted">
+            Промежуточная оценка появится после первого ответа.
+          </p>
+        )}
+      </div>
+
+      {/* Human review note */}
+      <div className="panel-soft p-5">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-brand-green/10 p-2.5 text-brand-green">
+            <ShieldCheck className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white">Роль комиссии</p>
+            <p className="text-xs text-text-muted">AI помогает, но не решает</p>
+          </div>
+        </div>
+        <p className="mt-3 text-xs leading-relaxed text-text-secondary">
+          Итоговое решение принимает комиссия inVision U. AI-оценка носит рекомендательный характер
+          и не является основанием для отказа или принятия.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function InterviewClient() {
   const {
     messages,
@@ -59,133 +160,91 @@ function InterviewClient() {
     phase,
   } = useChat();
 
+  const [mobileTab, setMobileTab] = useState<"chat" | "progress">("chat");
   const isCompleted = status === "completed";
 
   return (
-    <div className="page-shell grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
-      {/* Main column */}
-      <section className="space-y-4">
-        {/* Header */}
-        <div className="flex flex-col gap-4 rounded-2xl border border-white/6 bg-bg-surface/80 p-5 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-text-muted">AI-интервью · inVision U</p>
-            <h1 className="mt-1 text-2xl font-black tracking-tight text-white">Сессия интервью</h1>
-          </div>
-          <SessionControls compact />
+    <div className="page-shell">
+      {/* Mobile tab bar (hidden on xl) */}
+      <div className="mb-4 xl:hidden">
+        <div className="tab-bar">
+          <button
+            type="button"
+            className={cn("tab-bar-item", mobileTab === "chat" && "active")}
+            onClick={() => setMobileTab("chat")}
+          >
+            <MessageSquare className="h-4 w-4" />
+            Чат
+          </button>
+          <button
+            type="button"
+            className={cn("tab-bar-item", mobileTab === "progress" && "active")}
+            onClick={() => setMobileTab("progress")}
+          >
+            <TrendingUp className="h-4 w-4" />
+            Прогресс{progress > 0 && <span className="ml-1 font-mono text-[10px] text-brand-green">{progress}%</span>}
+          </button>
         </div>
+      </div>
 
-        {isCompleted ? (
-          <CompletionBanner />
-        ) : (
-          <>
-            <ChatWindow messages={messages} loading={loading || uploading} />
-            <InputBox
-              value={input}
-              onChange={setInput}
-              onSubmit={sendMessage}
-              onFilesSelected={uploadFiles}
-              onRemoveAttachment={removeAttachment}
-              attachments={attachments}
-              loading={loading}
-              uploading={uploading}
-              disabled={false}
-            />
-          </>
-        )}
-
-        {isCompleted && messages.length > 0 && (
-          <div className="panel-soft p-4">
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">История интервью</p>
-            <ChatWindow messages={messages} loading={false} />
-          </div>
-        )}
-      </section>
-
-      {/* Sidebar */}
-      <aside className="space-y-4">
-        {/* Progress card */}
-        <div className="panel-soft p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-brand-green p-2.5 text-black">
-              <BotMessageSquare className="h-4 w-4" />
-            </div>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+        {/* Main column — chat */}
+        <section className={cn("space-y-4", mobileTab === "progress" && "hidden xl:block")}>
+          {/* Header */}
+          <div className="flex flex-col gap-4 rounded-2xl border border-white/6 bg-bg-surface/80 p-5 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-sm font-bold text-white">
-                {isCompleted ? "Завершено" : "В процессе"}
-              </p>
-              <p className="text-xs text-text-muted">{phaseLabel(phase)}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-text-muted">AI-интервью · inVision U</p>
+              <h1 className="mt-1 text-2xl font-black tracking-tight text-white">Сессия интервью</h1>
             </div>
-          </div>
-
-          <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/8">
-            <div
-              className="h-full rounded-full bg-brand-green transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="mt-2 flex items-center justify-between">
-            <span className="font-mono text-sm text-brand-green">{progress}%</span>
-            <span className="text-xs text-text-muted">из 100%</span>
-          </div>
-        </div>
-
-        {/* Scoring panel */}
-        <div className="panel-soft p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-brand-green/10 p-2.5 text-brand-green">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-white">Промежуточная оценка</p>
-              <p className="text-xs text-text-muted">Обновляется после каждого ответа</p>
-            </div>
-          </div>
-
-          {scoreUpdate ? (
-            <div className="mt-4 space-y-3">
-              <div className="grid grid-cols-3 gap-2">
-                <ScorePill label="Итог" value={scoreUpdate.final_score} />
-                <ScorePill label="Доверие" value={`${Math.round(scoreUpdate.confidence * 100)}%`} />
-                <ScorePill label="AI риск" value={`${Math.round(scoreUpdate.ai_detection_prob * 100)}%`} />
+            <div className="flex items-center gap-3">
+              {/* Mini progress bar in header on mobile */}
+              <div className="flex items-center gap-2 xl:hidden">
+                <div className="h-1 w-20 overflow-hidden rounded-full bg-white/10">
+                  <div className="h-full rounded-full bg-brand-green transition-all" style={{ width: `${progress}%` }} />
+                </div>
+                <span className="font-mono text-xs text-brand-green">{progress}%</span>
               </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <ScorePill label="Аналитика" value={scoreUpdate.cognitive} />
-                <ScorePill label="Лидерство" value={scoreUpdate.leadership} />
-                <ScorePill label="Рост" value={scoreUpdate.growth} />
-                <ScorePill label="Решения" value={scoreUpdate.decision} />
-              </div>
-
-              <div className="panel-muted p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">Рекомендация AI</p>
-                <p className="mt-2 text-sm font-semibold text-white">{scoreUpdate.recommendation}</p>
-                <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">{scoreUpdate.explanation}</p>
-              </div>
+              <SessionControls compact />
             </div>
+          </div>
+
+          {isCompleted ? (
+            <CompletionBanner />
           ) : (
-            <p className="mt-4 text-sm text-text-muted">
-              Промежуточная оценка появится после первого ответа.
-            </p>
+            <>
+              <ChatWindow messages={messages} loading={loading || uploading} />
+              <InputBox
+                value={input}
+                onChange={setInput}
+                onSubmit={sendMessage}
+                onFilesSelected={uploadFiles}
+                onRemoveAttachment={removeAttachment}
+                attachments={attachments}
+                loading={loading}
+                uploading={uploading}
+                disabled={false}
+              />
+            </>
           )}
-        </div>
 
-        {/* Human review note */}
-        <div className="panel-soft p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-brand-green/10 p-2.5 text-brand-green">
-              <ShieldCheck className="h-4 w-4" />
+          {isCompleted && messages.length > 0 && (
+            <div className="panel-soft p-4">
+              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">История интервью</p>
+              <ChatWindow messages={messages} loading={false} />
             </div>
-            <div>
-              <p className="text-sm font-bold text-white">Роль комиссии</p>
-              <p className="text-xs text-text-muted">AI помогает, но не решает</p>
-            </div>
-          </div>
-          <p className="mt-3 text-xs leading-relaxed text-text-secondary">
-            Итоговое решение принимает комиссия inVision U. AI-оценка носит рекомендательный характер
-            и не является основанием для отказа или принятия.
-          </p>
-        </div>
-      </aside>
+          )}
+        </section>
+
+        {/* Sidebar — progress */}
+        <aside className={cn(mobileTab === "chat" && "hidden xl:block")}>
+          <ProgressSidebar
+            progress={progress}
+            phase={phase}
+            isCompleted={isCompleted}
+            scoreUpdate={scoreUpdate}
+          />
+        </aside>
+      </div>
     </div>
   );
 }

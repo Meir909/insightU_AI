@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BarChart3, ChevronRight, LayoutDashboard, Star, Zap, Radar } from "lucide-react";
+import { BarChart3, ChevronRight, LayoutDashboard, Radar, Star, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SessionControls } from "@/components/auth/session-controls";
@@ -18,7 +18,8 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-white/6 bg-bg-surface/95 lg:flex">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-white/6 bg-bg-surface/95 backdrop-blur-sm lg:flex">
+      {/* Logo */}
       <div className="border-b border-white/6 px-5 py-5">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-green text-black shadow-green-sm">
@@ -26,16 +27,13 @@ export function Sidebar() {
           </div>
           <div>
             <p className="text-sm font-black tracking-tight text-white">InsightU AI</p>
-            <p className="text-[11px] text-text-muted">Панель отбора · inVision U</p>
+            <p className="text-[10px] text-text-muted">Панель отбора · inVision U</p>
           </div>
         </div>
       </div>
 
-      <div className="px-5 pb-2 pt-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-text-muted">Навигация</p>
-      </div>
-
-      <nav className="flex-1 space-y-1 px-3">
+      {/* Nav */}
+      <nav className="flex-1 space-y-0.5 px-3 py-4">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
 
@@ -45,21 +43,28 @@ export function Sidebar() {
                 whileHover={{ x: 2 }}
                 transition={{ duration: 0.12 }}
                 className={cn(
-                  "flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-green/35 active:scale-[0.98]",
-                  active ? "bg-brand-green text-black" : "text-text-secondary hover:bg-white/4 hover:text-white",
+                  "relative flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-green/35 active:scale-[0.98]",
+                  active
+                    ? "bg-brand-green/10 text-brand-green"
+                    : "text-text-secondary hover:bg-white/6 hover:text-white",
                 )}
               >
+                {/* Active left accent bar */}
+                {active && (
+                  <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-brand-green shadow-green-sm" />
+                )}
                 <div className="flex items-center gap-3">
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-[18px] w-[18px]" />
                   {label}
                 </div>
-                {active ? <ChevronRight className="h-4 w-4" /> : null}
+                {active ? <ChevronRight className="h-3.5 w-3.5" /> : null}
               </motion.div>
             </Link>
           );
         })}
       </nav>
 
+      {/* Session */}
       <div className="border-t border-white/6 px-4 py-4">
         <SessionControls />
       </div>

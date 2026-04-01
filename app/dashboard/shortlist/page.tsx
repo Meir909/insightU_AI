@@ -38,7 +38,7 @@ export default async function ShortlistPage() {
           return (
             <article
               key={candidate.id}
-              className={`rounded-[28px] border bg-bg-surface p-5 ${rankStyle ? rankStyle.border : "border-white/6"}`}
+              className={`rounded-[28px] border bg-bg-surface p-5 transition-transform duration-150 hover:-translate-y-0.5 hover:shadow-md ${rankStyle ? rankStyle.border : "border-white/6"}`}
             >
               <div className="mb-5 flex items-start justify-between">
                 <div>
@@ -48,8 +48,8 @@ export default async function ShortlistPage() {
                     </span>
                   )}
                   <p className="font-mono text-xs text-brand-green">{candidate.code}</p>
-                  <h3 className="mt-1 text-xl font-black tracking-tight text-white">{candidate.city}</h3>
-                  <p className="mt-1 text-sm text-text-secondary">{candidate.program}</p>
+                  <h3 className="mt-1 text-xl font-black tracking-tight text-white">{candidate.name || candidate.code}</h3>
+                  <p className="mt-0.5 text-sm text-text-secondary">{candidate.city} · {candidate.program}</p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <StatusBadge status={candidate.status} />
@@ -75,7 +75,7 @@ export default async function ShortlistPage() {
               <p className="mb-4 text-sm leading-relaxed text-text-secondary">{candidate.reasoning}</p>
               <div className="rounded-2xl border border-brand-green/15 bg-brand-green/6 p-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand-green">Ключевая цитата</p>
-                <p className="mt-2 text-sm italic leading-relaxed text-text-secondary">«{candidate.key_quotes[0]}»</p>
+                <p className="mt-2 text-sm leading-relaxed text-text-secondary">«{candidate.key_quotes[0]}»</p>
               </div>
             </article>
           );

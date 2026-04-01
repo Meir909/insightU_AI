@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUpDown, ChevronRight, Search, Users } from "lucide-react";
+import { ArrowUpDown, ChevronRight, Search, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -17,10 +17,10 @@ function MetricPill({
 }) {
   const color =
     tone === "green"
-      ? "bg-brand-green/12 text-brand-green"
+      ? "bg-brand-green/20 text-brand-green"
       : tone === "amber"
-        ? "bg-status-mid/12 text-status-mid"
-        : "bg-status-low/12 text-status-low";
+        ? "bg-status-mid/20 text-status-mid"
+        : "bg-status-low/20 text-status-low";
 
   return <span className={`rounded-xl px-3 py-1 font-mono text-xs font-bold ${color}`}>{value}</span>;
 }
@@ -68,8 +68,18 @@ export function CandidateTable({ candidates, loading = false }: { candidates: Ca
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Поиск по имени, коду, городу..."
-            className="w-full rounded-2xl border border-white/6 bg-bg-elevated py-2.5 pl-10 pr-4 text-sm text-white outline-none transition-colors placeholder:text-text-muted focus:border-brand-green/25 focus-visible:ring-2 focus-visible:ring-brand-green/30"
+            className="w-full rounded-2xl border border-white/6 bg-bg-elevated py-2.5 pl-10 pr-10 text-sm text-white outline-none transition-colors placeholder:text-text-muted focus:border-brand-green/25 focus-visible:ring-2 focus-visible:ring-brand-green/30"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-text-muted transition-colors hover:text-white focus:outline-none"
+              aria-label="Очистить поиск"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
         <button
@@ -117,7 +127,7 @@ export function CandidateTable({ candidates, loading = false }: { candidates: Ca
               transition={{ delay: index * 0.02 }}
               whileTap={{ scale: 0.995 }}
               onClick={() => router.push(`/dashboard/candidates/${candidate.id}`)}
-              className="group flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition-all duration-150 hover:bg-white/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-green/35 active:bg-white/[0.03]"
+              className="group flex w-full items-center justify-between gap-4 px-4 py-4 text-left transition-all duration-150 hover:bg-white/[0.035] hover:shadow-[inset_0_0_0_1px_rgba(200,240,0,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-green/35 active:bg-white/[0.05]"
             >
               <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-brand-green/20 bg-brand-green/10 font-mono text-xs font-bold text-brand-green">
