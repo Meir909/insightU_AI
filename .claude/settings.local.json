@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(unzip:*)",
+      "Bash(npx tsc:*)",
+      "Bash(vercel:*)",
+      "Bash(curl:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.kixfqjniopucwhxdhbfi:LYfmhavMVXGGyaeE@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1\" npx prisma db push:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:LYfmhavMVXGGyaeE@db.kixfqjniopucwhxdhbfi.supabase.co:5432/postgres\" npx prisma db push:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:LYfmhavMVXGGyaeE@db.kixfqjniopucwhxdhbfi.supabase.co:5432/postgres\" npx prisma migrate diff:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:dummy@localhost:5432/dummy\" npx prisma migrate diff:*)",
+      "Bash(\"c:\\\\Users\\\\nurmi\\\\OneDrive\\\\Desktop\\\\decentrathon\\\\insightu-frontend\\\\app\\\\api\\\\debug-db\\\\route.ts\":*)",
+      "Bash(wc -l:*)",
+      "Bash(node -e:*)",
+      "Bash(git -C \"c:/Users/nurmi/OneDrive/Desktop/decentrathon/insightu-frontend\" status)",
+      "Bash(git -C \"c:/Users/nurmi/OneDrive/Desktop/decentrathon/insightu-frontend\" diff --stat)",
+      "Bash(git -C \"c:/Users/nurmi/OneDrive/Desktop/decentrathon/insightu-frontend\" log --oneline -5)",
+      "Bash(git -C \"c:/Users/nurmi/OneDrive/Desktop/decentrathon/insightu-frontend\" add app/account/page.tsx app/api/auth/register/route.ts \"app/api/candidates/[id]/route.ts\" app/dashboard/shortlist/page.tsx app/dashboard/talents/page.tsx app/globals.css components/apply/application-form.tsx components/auth/login-entry.tsx components/auth/register-entry.tsx components/chat/input-box.tsx components/dashboard/candidate-table.tsx components/dashboard/compliance-panel.tsx components/dashboard/invite-button.tsx components/ui/empty-state.tsx lib/server/email.ts)",
+      "Bash(git -C:*)",
+      "Bash(git config:*)"
+    ]
+  }
+}
