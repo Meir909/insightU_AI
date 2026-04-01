@@ -5,6 +5,7 @@ import { applyAuthCookies, type AuthSession } from "@/lib/server/auth";
 import { hashPassword } from "@/lib/server/password";
 import { addSecurityHeaders, sanitizeObject } from "@/lib/server/security";
 import { createAuditLog } from "@/lib/server/prisma";
+import { sendCandidateWelcome, sendCommitteeWelcome, notifyCommitteeNewCandidate } from "@/lib/server/email";
 
 const committeeAccessKey = process.env.COMMITTEE_ACCESS_KEY || "committee-demo";
 
@@ -29,12 +30,24 @@ const committeeSchema = z.object({
 const registerSchema = z.discriminatedUnion("role", [candidateSchema, committeeSchema]);
 
 export async function POST(request: NextRequest) {
-  const rawPayload = registerSchema.parse(await request.json());
+  let rawPayload: z.infer<typeof registerSchema>;
+  try {
+    const body = await request.json();
+    rawPayload = registerSchema.parse(body);
+  } catch (err) {
+    const message = err instanceof z.ZodError
+      ? err.errors.map((e) => e.message).join("; ")
+      : "Invalid request data";
+    return addSecurityHeaders(
+      NextResponse.json({ error: message }, { status: 400 })
+    );
+  }
+
   const payload = sanitizeObject(rawPayload) as z.infer<typeof registerSchema>;
 
   if (payload.role === "committee" && payload.accessKey !== committeeAccessKey) {
     return addSecurityHeaders(
-      NextResponse.json({ error: "Invalid committee access key" }, { status: 401 }),
+      NextResponse.json({ error: "Неверный код доступа комиссии" }, { status: 401 }),
     );
   }
 
@@ -82,6 +95,25 @@ export async function POST(request: NextRequest) {
         acceptedLegal: true,
       },
     });
+
+    // Fire-and-forget emails (don't block the response)
+    if (account.role === "candidate") {
+      void sendCandidateWelcome({
+        name: account.name,
+        email: account.email,
+        phone: account.phone,
+        code: account.entityId ?? account.id,
+      });
+      void notifyCommitteeNewCandidate({
+        candidateName: account.name,
+        candidateCode: account.entityId ?? account.id,
+      });
+    } else {
+      void sendCommitteeWelcome({
+        name: account.name,
+        email: account.email ?? "",
+      });
+    }
 
     return addSecurityHeaders(applyAuthCookies(response, session));
   } catch (error) {

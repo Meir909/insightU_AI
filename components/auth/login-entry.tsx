@@ -74,7 +74,7 @@ export function LoginEntry() {
         })}
       </div>
 
-      <label className="block space-y-2">
+      <label className="block space-y-2.5">
         <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-text-muted">
           {role === "candidate" ? "Телефон или email" : "Рабочий email"}
         </span>
@@ -88,7 +88,7 @@ export function LoginEntry() {
         />
       </label>
 
-      <label className="block space-y-2">
+      <label className="block space-y-2.5">
         <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-text-muted">Пароль</span>
         <input
           type="password"
@@ -105,10 +105,10 @@ export function LoginEntry() {
         type="button"
         onClick={submit}
         disabled={submitting}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-[20px] bg-brand-green px-5 py-3.5 text-sm font-bold text-black transition-all hover:bg-brand-dim disabled:cursor-not-allowed disabled:opacity-70"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-green px-5 py-4 text-base font-bold text-black transition-all hover:bg-brand-dim hover:shadow-green-sm active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-        {submitting ? "Входим..." : "Войти"}
+        {submitting ? "Входим..." : "Войти в кабинет"}
       </button>
 
       <div className="space-y-2 text-sm text-text-secondary">

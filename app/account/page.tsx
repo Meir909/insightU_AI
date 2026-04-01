@@ -97,8 +97,8 @@ export default async function CandidateAccountPage() {
 
         {/* Journey Timeline */}
         <div className="panel-soft p-5">
-          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Ваш путь</p>
-          <div className="flex items-start gap-0">
+          <p className="mb-5 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Ваш путь</p>
+          <div className="flex items-start">
             {[
               {
                 label: "Анкета",
@@ -134,9 +134,15 @@ export default async function CandidateAccountPage() {
               const Icon = step.icon;
               return (
                 <div key={step.label} className="flex flex-1 flex-col items-center">
+                  {/* Icon row with connector lines */}
                   <div className="flex w-full items-center">
+                    {/* Left connector */}
+                    {idx > 0 && (
+                      <div className={`h-px flex-1 ${arr[idx - 1].done ? "bg-brand-green" : "bg-white/10"}`} />
+                    )}
+                    {/* Step icon */}
                     <div
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-xs transition-all mx-auto ${
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
                         step.done
                           ? "border-brand-green bg-brand-green text-black"
                           : step.active
@@ -144,15 +150,17 @@ export default async function CandidateAccountPage() {
                             : "border-white/15 text-text-muted"
                       }`}
                     >
-                      <Icon className="h-3.5 w-3.5" />
+                      <Icon className="h-4 w-4" />
                     </div>
+                    {/* Right connector */}
+                    {idx < arr.length - 1 && (
+                      <div className={`h-px flex-1 ${step.done ? "bg-brand-green" : "bg-white/10"}`} />
+                    )}
                   </div>
-                  <p className={`mt-2 text-center text-[10px] font-semibold ${step.active ? "text-brand-green" : step.done ? "text-white" : "text-text-muted"}`}>
+                  {/* Label */}
+                  <p className={`mt-2 text-center text-[10px] font-semibold leading-tight ${step.active ? "text-brand-green" : step.done ? "text-white" : "text-text-muted"}`}>
                     {step.label}
                   </p>
-                  {idx < arr.length - 1 && (
-                    <div className={`absolute h-px w-full top-4 left-1/2 ${step.done ? "bg-brand-green" : "bg-white/10"}`} />
-                  )}
                 </div>
               );
             })}

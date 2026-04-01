@@ -1,10 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUpDown, ChevronRight, Search } from "lucide-react";
+import { ArrowUpDown, ChevronRight, Search, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { Candidate } from "@/lib/types";
 
 function MetricPill({
@@ -24,7 +25,25 @@ function MetricPill({
   return <span className={`rounded-xl px-3 py-1 font-mono text-xs font-bold ${color}`}>{value}</span>;
 }
 
-export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
+function SkeletonRow() {
+  return (
+    <div className="flex items-center gap-4 border-b border-white/6 px-4 py-5">
+      <div className="skeleton h-11 w-11 shrink-0 rounded-2xl" />
+      <div className="flex-1 space-y-2">
+        <div className="skeleton h-3.5 w-40 rounded-full" />
+        <div className="skeleton h-2.5 w-28 rounded-full" />
+      </div>
+      <div className="hidden items-center gap-2 md:flex">
+        <div className="skeleton h-6 w-14 rounded-xl" />
+        <div className="skeleton h-6 w-24 rounded-xl" />
+        <div className="skeleton h-6 w-16 rounded-xl" />
+        <div className="skeleton h-6 w-14 rounded-xl" />
+      </div>
+    </div>
+  );
+}
+
+export function CandidateTable({ candidates, loading = false }: { candidates: Candidate[]; loading?: boolean }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [sortDesc, setSortDesc] = useState(true);
@@ -63,9 +82,29 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
         </button>
       </div>
 
+      {/* Skeleton loading */}
+      {loading && (
+        <div className="hidden md:block">
+          {Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && filtered.length === 0 && (
+        <EmptyState
+          icon={Users}
+          title={search ? "Кандидаты не найдены" : "Кандидатов пока нет"}
+          description={
+            search
+              ? `По запросу «${search}» ничего не найдено. Попробуйте другой запрос.`
+              : "Когда кандидаты пройдут регистрацию, они появятся здесь."
+          }
+        />
+      )}
+
       {/* Desktop list */}
       <div className="hidden divide-y divide-white/6 md:block">
-        {filtered.map((candidate, index) => {
+        {!loading && filtered.map((candidate, index) => {
           const review = candidate.committee_review;
           const aiRisk = Math.round(candidate.ai_detection_prob * 100);
 
@@ -112,7 +151,7 @@ export function CandidateTable({ candidates }: { candidates: Candidate[] }) {
 
       {/* Mobile card grid */}
       <div className="grid gap-3 p-3 md:hidden">
-        {filtered.map((candidate, index) => {
+        {!loading && filtered.map((candidate, index) => {
           const review = candidate.committee_review;
           const aiRisk = Math.round(candidate.ai_detection_prob * 100);
 

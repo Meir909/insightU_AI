@@ -10,8 +10,8 @@
   --color-bg-elevated: #1c1c1c;
   --color-bg-overlay: #222222;
   --color-text-primary: #ffffff;
-  --color-text-secondary: #a0a0a0;
-  --color-text-muted: #555555;
+  --color-text-secondary: #b0b0b0;
+  --color-text-muted: #606060;
   --color-status-high: #c8f000;
   --color-status-mid: #f5a623;
   --color-status-low: #e53935;
@@ -120,36 +120,160 @@ a {
 }
 
 .panel-soft {
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(18, 18, 18, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(18, 18, 18, 0.94);
   border-radius: 28px;
+  transition: border-color 200ms ease;
 }
 
 .panel-muted {
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.025);
-  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 20px;
 }
 
 .auth-input {
   width: 100%;
-  border-radius: 20px;
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(28, 28, 28, 0.9);
-  padding: 0.9rem 1rem;
+  padding: 0.875rem 1.125rem;
   color: #ffffff;
+  font-size: 0.9375rem;
   outline: none;
   transition:
-    border-color 150ms ease,
-    background-color 150ms ease,
-    box-shadow 150ms ease;
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 200ms ease;
 }
 
 .auth-input::placeholder {
-  color: #6f6f6f;
+  color: #5a5a5a;
+}
+
+.auth-input:hover {
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .auth-input:focus {
-  border-color: rgba(200, 240, 0, 0.35);
+  border-color: rgba(200, 240, 0, 0.4);
+  background: rgba(32, 32, 32, 0.95);
+  box-shadow:
+    0 0 0 3px rgba(200, 240, 0, 0.09),
+    0 1px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* Reusable form field for application form & dashboard inputs */
+.form-field {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.75rem 1rem;
+  color: #ffffff;
+  font-size: 0.9rem;
+  outline: none;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 200ms ease;
+}
+
+.form-field::placeholder {
+  color: #5a5a5a;
+}
+
+.form-field:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.form-field:focus {
+  border-color: rgba(200, 240, 0, 0.38);
+  background: rgba(255, 255, 255, 0.05);
   box-shadow: 0 0 0 3px rgba(200, 240, 0, 0.08);
+}
+
+.form-field option {
+  background: #1c1c1c;
+  color: #ffffff;
+}
+
+/* Primary action button */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 14px;
+  background: #c8f000;
+  color: #000000;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.75rem 1.375rem;
+  transition:
+    background-color 150ms ease,
+    transform 100ms ease,
+    box-shadow 150ms ease;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #b4d900;
+  box-shadow: 0 4px 16px rgba(200, 240, 0, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Secondary/outline button */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.75rem 1.25rem;
+  transition:
+    border-color 150ms ease,
+    color 150ms ease,
+    background 150ms ease;
+  cursor: pointer;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Skeleton shimmer loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 8px;
 }

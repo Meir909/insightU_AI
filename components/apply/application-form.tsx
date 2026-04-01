@@ -272,13 +272,13 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
 
       {/* Step 1: Personal data */}
       {step === 1 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-white">Личные данные</h2>
+        <div className="space-y-5">
+          <h2 className="text-xl font-bold text-white">Личные данные</h2>
 
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1.5">Полное имя *</label>
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted mb-2">Полное имя *</label>
             <input
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-text-muted focus:border-brand-green/50 focus:outline-none"
+              className="form-field"
               value={form.fullName}
               onChange={(e) => set("fullName", e.target.value)}
               placeholder="Алия Нурова"
@@ -287,9 +287,9 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1.5">Город *</label>
+              <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted mb-2">Город *</label>
               <select
-                className="w-full rounded-xl border border-white/10 bg-bg-elevated px-4 py-2.5 text-sm text-white focus:border-brand-green/50 focus:outline-none"
+                className="form-field"
                 value={form.city}
                 onChange={(e) => set("city", e.target.value)}
               >
@@ -299,10 +299,10 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1.5">Дата рождения *</label>
+              <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted mb-2">Дата рождения *</label>
               <input
                 type="date"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white focus:border-brand-green/50 focus:outline-none"
+                className="form-field"
                 value={form.dateOfBirth}
                 onChange={(e) => set("dateOfBirth", e.target.value)}
                 max={new Date(Date.now() - 12 * 365 * 24 * 3600 * 1000).toISOString().split("T")[0]}
@@ -311,9 +311,9 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1.5">Уровень образования *</label>
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted mb-2">Уровень образования *</label>
             <select
-              className="w-full rounded-xl border border-white/10 bg-bg-elevated px-4 py-2.5 text-sm text-white focus:border-brand-green/50 focus:outline-none"
+              className="form-field"
               value={form.educationLevel}
               onChange={(e) => set("educationLevel", e.target.value as FormData["educationLevel"])}
             >
@@ -326,19 +326,19 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1.5">Школа / университет *</label>
+              <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted mb-2">Школа / университет *</label>
               <input
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-text-muted focus:border-brand-green/50 focus:outline-none"
+                className="form-field"
                 value={form.schoolName}
                 onChange={(e) => set("schoolName", e.target.value)}
                 placeholder="Назарбаев Интеллектуальная школа"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1.5">Год окончания *</label>
+              <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted mb-2">Год окончания *</label>
               <input
                 type="number"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white focus:border-brand-green/50 focus:outline-none"
+                className="form-field"
                 value={form.graduationYear}
                 onChange={(e) => set("graduationYear", Number(e.target.value))}
                 min={2020}
@@ -351,56 +351,58 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
 
       {/* Step 2: Motivation */}
       {step === 2 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-white">Мотивация</h2>
-          <p className="text-xs text-text-muted">Минимум 50 символов. AI анализирует глубину и аутентичность ответов.</p>
+        <div className="space-y-5">
+          <div>
+            <h2 className="text-xl font-bold text-white">Мотивация</h2>
+            <p className="mt-1 text-xs text-text-muted">Минимум 50 символов. AI анализирует глубину и аутентичность.</p>
+          </div>
 
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1.5">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted mb-2">
               Почему вы хотите в inVision U? *
             </label>
             <textarea
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-text-muted focus:border-brand-green/50 focus:outline-none resize-none"
-              rows={4}
+              className="form-field resize-none"
+              rows={5}
               value={form.whyVisionU}
               onChange={(e) => set("whyVisionU", e.target.value)}
               placeholder="Расскажите искренне — что именно привлекает вас в этой программе..."
             />
-            <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center justify-between mt-1.5">
               <QualityBar text={form.whyVisionU} label="Качество" />
               <span className="ml-3 text-[10px] text-text-muted shrink-0">{form.whyVisionU.length} симв.</span>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1.5">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted mb-2">
               Каковы ваши цели на ближайшие 5 лет? *
             </label>
             <textarea
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-text-muted focus:border-brand-green/50 focus:outline-none resize-none"
-              rows={4}
+              className="form-field resize-none"
+              rows={5}
               value={form.goals}
               onChange={(e) => set("goals", e.target.value)}
               placeholder="Конкретные цели: что именно вы хотите создать, изменить, достичь..."
             />
-            <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center justify-between mt-1.5">
               <QualityBar text={form.goals} label="Качество" />
               <span className="ml-3 text-[10px] text-text-muted shrink-0">{form.goals.length} симв.</span>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1.5">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted mb-2">
               Какие изменения вы хотите привнести в общество? *
             </label>
             <textarea
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-text-muted focus:border-brand-green/50 focus:outline-none resize-none"
-              rows={4}
+              className="form-field resize-none"
+              rows={5}
               value={form.changeAgentVision}
               onChange={(e) => set("changeAgentVision", e.target.value)}
               placeholder="Ваше видение роли агента изменений — конкретно и честно..."
             />
-            <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center justify-between mt-1.5">
               <QualityBar text={form.changeAgentVision} label="Качество" />
               <span className="ml-3 text-[10px] text-text-muted shrink-0">{form.changeAgentVision.length} симв.</span>
             </div>
@@ -411,23 +413,23 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
       {/* Step 3: Experience */}
       {step === 3 && (
         <div className="space-y-5">
-          <h2 className="text-lg font-bold text-white">Опыт и достижения</h2>
+          <h2 className="text-xl font-bold text-white">Опыт и достижения</h2>
 
           {/* Leadership */}
-          <div className="rounded-xl border border-white/8 p-4 space-y-3">
+          <div className="rounded-2xl border border-white/8 bg-white/2 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm font-semibold text-white">Есть опыт лидерства?</label>
               <button
                 type="button"
                 onClick={() => set("hasLeadershipExperience", !form.hasLeadershipExperience)}
-                className={`relative h-6 w-11 rounded-full transition-colors ${form.hasLeadershipExperience ? "bg-brand-green" : "bg-white/15"}`}
+                className={`relative h-7 w-12 rounded-full transition-colors duration-200 ${form.hasLeadershipExperience ? "bg-brand-green" : "bg-white/15"}`}
               >
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${form.hasLeadershipExperience ? "left-5" : "left-0.5"}`} />
+                <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-md transition-all duration-200 ${form.hasLeadershipExperience ? "left-6" : "left-1"}`} />
               </button>
             </div>
             {form.hasLeadershipExperience && (
               <textarea
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-text-muted focus:border-brand-green/50 focus:outline-none resize-none"
+                className="form-field resize-none"
                 rows={3}
                 value={form.leadershipDescription}
                 onChange={(e) => set("leadershipDescription", e.target.value)}
@@ -437,20 +439,20 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
           </div>
 
           {/* Team */}
-          <div className="rounded-xl border border-white/8 p-4 space-y-3">
+          <div className="rounded-2xl border border-white/8 bg-white/2 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm font-semibold text-white">Есть командный опыт?</label>
               <button
                 type="button"
                 onClick={() => set("hasTeamExperience", !form.hasTeamExperience)}
-                className={`relative h-6 w-11 rounded-full transition-colors ${form.hasTeamExperience ? "bg-brand-green" : "bg-white/15"}`}
+                className={`relative h-7 w-12 rounded-full transition-colors duration-200 ${form.hasTeamExperience ? "bg-brand-green" : "bg-white/15"}`}
               >
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${form.hasTeamExperience ? "left-5" : "left-0.5"}`} />
+                <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-md transition-all duration-200 ${form.hasTeamExperience ? "left-6" : "left-1"}`} />
               </button>
             </div>
             {form.hasTeamExperience && (
               <textarea
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-text-muted focus:border-brand-green/50 focus:outline-none resize-none"
+                className="form-field resize-none"
                 rows={3}
                 value={form.teamExperienceDescription}
                 onChange={(e) => set("teamExperienceDescription", e.target.value)}
@@ -461,29 +463,29 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
 
           {/* Skills */}
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-2">Навыки (до 15)</label>
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted mb-2">Навыки (до 15)</label>
             <div className="flex gap-2">
               <input
-                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white placeholder-text-muted focus:border-brand-green/50 focus:outline-none"
+                className="form-field flex-1"
                 value={skillInput}
                 onChange={(e) => setSkillInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSkill(); } }}
-                placeholder="Питон, лидерство, дизайн..."
+                placeholder="Python, лидерство, дизайн..."
               />
               <button
                 type="button"
                 onClick={addSkill}
-                className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white hover:bg-white/10"
+                className="flex items-center justify-center rounded-[14px] border border-white/10 bg-white/5 px-4 text-white hover:bg-white/10 transition"
               >
                 <Plus className="h-4 w-4" />
               </button>
             </div>
             {form.skills.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {form.skills.map((s) => (
-                  <span key={s} className="flex items-center gap-1.5 rounded-full border border-brand-green/20 bg-brand-green/8 px-3 py-1 text-xs text-brand-green">
+                  <span key={s} className="flex items-center gap-1.5 rounded-full border border-brand-green/20 bg-brand-green/8 px-3 py-1.5 text-xs font-medium text-brand-green">
                     {s}
-                    <button onClick={() => removeSkill(s)}><X className="h-3 w-3" /></button>
+                    <button onClick={() => removeSkill(s)} className="opacity-60 hover:opacity-100 transition"><X className="h-3 w-3" /></button>
                   </span>
                 ))}
               </div>
@@ -493,27 +495,27 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
           {/* Languages */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-text-muted">Языки</label>
-              <button type="button" onClick={addLanguage} className="text-xs text-brand-green hover:text-brand-green/80">+ Добавить</button>
+              <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">Языки</label>
+              <button type="button" onClick={addLanguage} className="text-xs font-semibold text-brand-green hover:text-brand-green/80 transition">+ Добавить</button>
             </div>
             <div className="space-y-2">
               {form.languages.map((lang, idx) => (
                 <div key={idx} className="flex gap-2">
                   <input
-                    className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-text-muted focus:border-brand-green/50 focus:outline-none"
+                    className="form-field flex-1"
                     value={lang.language}
                     onChange={(e) => updateLanguage(idx, "language", e.target.value)}
                     placeholder="Язык"
                   />
                   <select
-                    className="rounded-xl border border-white/10 bg-bg-elevated px-3 py-2 text-sm text-white focus:border-brand-green/50 focus:outline-none"
+                    className="form-field w-auto"
                     value={lang.level}
                     onChange={(e) => updateLanguage(idx, "level", e.target.value)}
                   >
                     {LANG_LEVELS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
                   </select>
                   {form.languages.length > 1 && (
-                    <button type="button" onClick={() => removeLanguage(idx)} className="text-text-muted hover:text-white">
+                    <button type="button" onClick={() => removeLanguage(idx)} className="flex items-center justify-center w-10 text-text-muted hover:text-white transition">
                       <X className="h-4 w-4" />
                     </button>
                   )}
@@ -525,41 +527,41 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
           {/* Achievements */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-text-muted">Достижения (до 10)</label>
+              <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-text-muted">Достижения (до 10)</label>
               {form.achievements.length < 10 && (
-                <button type="button" onClick={addAchievement} className="text-xs text-brand-green hover:text-brand-green/80">+ Добавить</button>
+                <button type="button" onClick={addAchievement} className="text-xs font-semibold text-brand-green hover:text-brand-green/80 transition">+ Добавить</button>
               )}
             </div>
             <div className="space-y-3">
               {form.achievements.map((ach, idx) => (
-                <div key={idx} className="rounded-xl border border-white/8 p-3 space-y-2">
+                <div key={idx} className="rounded-2xl border border-white/8 bg-white/2 p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <select
-                      className="rounded-lg border border-white/10 bg-bg-elevated px-2 py-1 text-xs text-white focus:outline-none"
+                      className="form-field w-auto text-xs"
                       value={ach.type}
                       onChange={(e) => updateAchievement(idx, "type", e.target.value)}
                     >
                       {ACHIEVEMENT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
-                    <button type="button" onClick={() => removeAchievement(idx)} className="text-text-muted hover:text-white">
-                      <X className="h-3.5 w-3.5" />
+                    <button type="button" onClick={() => removeAchievement(idx)} className="text-text-muted hover:text-white transition">
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                   <input
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-text-muted focus:border-brand-green/50 focus:outline-none"
+                    className="form-field"
                     value={ach.title}
                     onChange={(e) => updateAchievement(idx, "title", e.target.value)}
                     placeholder="Название достижения"
                   />
                   <input
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-text-muted focus:border-brand-green/50 focus:outline-none"
+                    className="form-field"
                     value={ach.description}
                     onChange={(e) => updateAchievement(idx, "description", e.target.value)}
                     placeholder="Краткое описание"
                   />
                   <input
                     type="number"
-                    className="w-28 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-brand-green/50 focus:outline-none"
+                    className="form-field w-32"
                     value={ach.year}
                     onChange={(e) => updateAchievement(idx, "year", Number(e.target.value))}
                     min={2015}
@@ -574,10 +576,10 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
 
       {/* Step 4: Confirmation */}
       {step === 4 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-white">Подтверждение</h2>
+        <div className="space-y-5">
+          <h2 className="text-xl font-bold text-white">Подтверждение</h2>
 
-          <div className="rounded-xl border border-white/8 bg-white/3 p-4 space-y-3 text-sm">
+          <div className="rounded-2xl border border-white/8 bg-white/3 p-5 space-y-3 text-sm">
             <div className="grid gap-1.5">
               <div className="flex justify-between">
                 <span className="text-text-muted">Имя</span>
@@ -643,7 +645,7 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
           <button
             type="button"
             onClick={() => setStep((s) => (s - 1) as Step)}
-            className="flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2.5 text-sm text-text-secondary hover:border-white/20 hover:text-white transition"
+            className="btn-secondary"
           >
             <ArrowLeft className="h-4 w-4" />
             Назад
@@ -657,7 +659,7 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
             type="button"
             disabled={!canProceed()}
             onClick={() => setStep((s) => (s + 1) as Step)}
-            className="flex items-center gap-2 rounded-xl bg-brand-green px-5 py-2.5 text-sm font-bold text-black transition hover:bg-brand-green/90 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="btn-primary"
           >
             Далее
             <ArrowRight className="h-4 w-4" />
@@ -667,7 +669,7 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
             type="button"
             disabled={!canProceed() || loading}
             onClick={handleSubmit}
-            className="flex items-center gap-2 rounded-xl bg-brand-green px-6 py-2.5 text-sm font-bold text-black transition hover:bg-brand-green/90 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="btn-primary px-7"
           >
             {loading ? "Отправляем..." : "Отправить анкету"}
             {!loading && <CheckCircle2 className="h-4 w-4" />}

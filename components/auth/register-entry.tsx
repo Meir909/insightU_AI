@@ -144,10 +144,12 @@ export function RegisterEntry() {
             </Field>
             <Field label="Код доступа комиссии">
               <input
-                type="password"
+                type="text"
                 value={committee.accessKey}
                 onChange={(event) => setCommittee((current) => ({ ...current, accessKey: event.target.value }))}
                 className="auth-input"
+                placeholder="committee-demo"
+                autoComplete="off"
               />
             </Field>
           </div>
@@ -178,7 +180,7 @@ export function RegisterEntry() {
         type="button"
         onClick={submit}
         disabled={submitting}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-[20px] bg-brand-green px-5 py-3.5 text-sm font-bold text-black transition-all hover:bg-brand-dim disabled:cursor-not-allowed disabled:opacity-70"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-green px-5 py-4 text-base font-bold text-black transition-all hover:bg-brand-dim hover:shadow-green-sm active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
         Создать аккаунт
@@ -202,7 +204,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="block space-y-2">
+    <label className="block space-y-2.5">
       <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-text-muted">{label}</span>
       {children}
     </label>

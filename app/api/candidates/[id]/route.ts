@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/server/auth";
-import { getCandidateById, getAuthenticatedAccountByToken } from "@/lib/server/prisma";
+import { getCandidateById, getAuthenticatedAccountByToken, prisma } from "@/lib/server/prisma";
 import { addSecurityHeaders } from "@/lib/server/security";
 import { logger } from "@/lib/server/logging";
+
+const ALLOWED_STATUSES = ["shortlisted", "flagged", "in_progress", "completed", "rejected"] as const;
+type AllowedStatus = typeof ALLOWED_STATUSES[number];
 
 export async function GET(
   request: NextRequest,
@@ -48,5 +51,53 @@ export async function GET(
       { status: 500 }
     );
     return addSecurityHeaders(response);
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = getAuthSession(request);
+  if (!session || session.role !== "committee") {
+    return addSecurityHeaders(NextResponse.json({ error: "Forbidden" }, { status: 403 }));
+  }
+
+  const { id } = await params;
+
+  try {
+    const body = await request.json() as { status?: string };
+    const status = body.status as AllowedStatus | undefined;
+
+    if (!status || !ALLOWED_STATUSES.includes(status)) {
+      return addSecurityHeaders(
+        NextResponse.json(
+          { error: `Invalid status. Allowed: ${ALLOWED_STATUSES.join(", ")}` },
+          { status: 400 }
+        )
+      );
+    }
+
+    const candidate = await prisma.candidate.update({
+      where: { id },
+      data: { status },
+    });
+
+    logger.api.info("Candidate status updated", {
+      candidateId: id,
+      newStatus: status,
+      sessionId: session.sessionId,
+      role: session.role,
+    });
+
+    return addSecurityHeaders(NextResponse.json({ candidate }));
+  } catch (error) {
+    logger.api.error("Failed to update candidate status", error as Error, { candidateId: id });
+    return addSecurityHeaders(
+      NextResponse.json(
+        { error: error instanceof Error ? error.message : "Failed to update candidate" },
+        { status: 500 }
+      )
+    );
   }
 }
