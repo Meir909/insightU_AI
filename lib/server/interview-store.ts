@@ -3,8 +3,10 @@ import type { ChatAttachment, ChatMessage } from "@/lib/types";
 import { getAssistantReply, getInterviewMeta } from "@/lib/server/interviewer";
 import { scoreInterview } from "@/lib/server/interview-scoring";
 import { detectAIContent } from "@/lib/services/ai-detector";
+import { scoreCandidateWithLLM } from "@/lib/services/llm-scorer";
 import {
   addInterviewMessage,
+  createEvaluation,
   getCandidateById,
   getAuthenticatedAccountByToken,
   getInterviewSessionByCandidateId,
@@ -14,7 +16,12 @@ import {
 type SessionState = {
   sessionId: string;
   userId: string;
+  candidateId: string;
   candidateName: string;
+  candidateCity?: string;
+  candidateProgram?: string;
+  candidateGoals?: string;
+  candidateExperience?: string;
   messages: ChatMessage[];
   progress: number;
   status: "active" | "completed";
@@ -111,7 +118,12 @@ export async function getOrCreateSession(_requestedSessionId: string, userId: st
   return {
     sessionId: persisted.id,
     userId,
+    candidateId: candidate.id,
     candidateName: candidate.fullName || candidateName,
+    candidateCity: candidate.city ?? undefined,
+    candidateProgram: candidate.institution ?? undefined,
+    candidateGoals: candidate.goals ?? undefined,
+    candidateExperience: candidate.experience ?? undefined,
     messages,
     progress: persisted.progress,
     status: persisted.status === "completed" ? "completed" : "active",
@@ -143,10 +155,16 @@ export async function appendUserMessage(
   const allArtifacts = [...session.artifacts, ...attachments];
   const scoreUpdate = scoreInterview(userMessages, allArtifacts);
 
-  const assistant = await getAssistantReply([
-    ...session.messages,
-    makeMessage("user", contentWithArtifacts, attachments),
-  ]);
+  const assistant = await getAssistantReply(
+    [...session.messages, makeMessage("user", contentWithArtifacts, attachments)],
+    {
+      name: session.candidateName,
+      city: session.candidateCity,
+      program: session.candidateProgram,
+      goals: session.candidateGoals,
+      experience: session.candidateExperience,
+    },
+  );
 
   await addInterviewMessage({
     sessionId: session.sessionId,
@@ -167,16 +185,60 @@ export async function appendUserMessage(
     status: assistant.completed ? "completed" : "active",
   });
 
-  // On interview completion: run full LLM-based AI detection async (does not block response)
+  // On interview completion: run LLM scoring + AI detection async (does not block response)
   if (assistant.completed) {
     const pureUserMessages = userMessages.filter((m) => !m.startsWith("[Attached evidence]"));
+
+    // 1. LLM-based AI content detection
     detectAIContent(pureUserMessages).then(async (detection) => {
-      // Override aiRiskScore with LLM-enhanced result
       await updateInterviewProgress(session.sessionId, 100, undefined, {
         aiRiskScore: Math.round(detection.probability * 100),
       });
     }).catch((err) => {
       console.error("[interview-store] LLM AI detection failed:", err);
+    });
+
+    // 2. LLM-based quality scoring — overwrites heuristic scores in candidate_evaluations
+    scoreCandidateWithLLM(pureUserMessages, {
+      name: session.candidateName,
+      city: session.candidateCity,
+      program: session.candidateProgram,
+      goals: session.candidateGoals,
+      experience: session.candidateExperience,
+    }).then(async (llmScore) => {
+      if (!llmScore) return;
+
+      // Update interview_sessions with LLM scores
+      await updateInterviewProgress(session.sessionId, 100, "Interview completed", {
+        cognitiveScore: llmScore.cognitive,
+        leadershipScore: llmScore.leadership,
+        growthScore: llmScore.growth,
+        decisionScore: llmScore.decision,
+        motivationScore: llmScore.motivation,
+        authenticityScore: llmScore.authenticity,
+        confidenceScore: Math.round(llmScore.confidence * 100),
+      });
+
+      // Save full evaluation to candidate_evaluations table
+      await createEvaluation({
+        candidateId: session.candidateId,
+        problemSolving: llmScore.cognitive,
+        leadershipPotential: llmScore.leadership,
+        adaptability: llmScore.growth,
+        changeAgentMindset: llmScore.decision,
+        softSkills: llmScore.motivation,
+        authenticity: llmScore.authenticity,
+        overallScore: llmScore.overallScore,
+        confidence: Math.round(llmScore.confidence * 100),
+        strengths: llmScore.strengths,
+        weaknesses: llmScore.weaknesses,
+        redFlags: llmScore.redFlags,
+        reasoning: llmScore.reasoning,
+        recommendation: llmScore.overallScore >= 70 ? "Proceed to committee discussion" : "Escalate to committee review",
+        evaluatorType: "llm_gpt4o",
+      });
+    }).catch((err) => {
+      console.error("[interview-store] LLM scoring failed:", err);
     });
   }
 
