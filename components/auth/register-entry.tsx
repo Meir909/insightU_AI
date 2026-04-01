@@ -22,6 +22,36 @@ const defaultCommittee = {
   accessKey: "",
 };
 
+function getPasswordStrength(pw: string): { level: 0 | 1 | 2 | 3; label: string; color: string } {
+  if (!pw) return { level: 0, label: "", color: "" };
+  const checks = [pw.length >= 8, /[A-Z]/.test(pw) && /[a-z]/.test(pw), /\d/.test(pw), /[^a-zA-Z0-9]/.test(pw)];
+  const score = checks.filter(Boolean).length;
+  if (score <= 1) return { level: 1, label: "Слабый", color: "bg-status-low" };
+  if (score === 2) return { level: 2, label: "Средний", color: "bg-status-mid" };
+  return { level: 3, label: "Надёжный", color: "bg-brand-green" };
+}
+
+function PasswordStrengthBar({ password }: { password: string }) {
+  const { level, label, color } = getPasswordStrength(password);
+  if (level === 0) return null;
+  return (
+    <div className="mt-2 space-y-1" aria-live="polite">
+      <div className="flex gap-1">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= level ? color : "bg-white/10"}`} />
+        ))}
+      </div>
+      <p className={`text-[10px] font-semibold ${level === 1 ? "text-status-low" : level === 2 ? "text-status-mid" : "text-brand-green"}`}>
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 export function RegisterEntry() {
   const router = useRouter();
   const [role, setRole] = useState<Role>("candidate");
@@ -31,6 +61,13 @@ export function RegisterEntry() {
   const [submitting, setSubmitting] = useState(false);
   const [showCandidatePassword, setShowCandidatePassword] = useState(false);
   const [showCommitteePassword, setShowCommitteePassword] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const touch = (field: string) => setTouched((t) => ({ ...t, [field]: true }));
+
+  const phoneError = touched.phone && !/^\+7\d{10}$/.test(candidate.phone) ? "Формат: +77071234567" : "";
+  const emailError = touched.email && candidate.email && !isValidEmail(candidate.email) ? "Введите корректный email" : "";
+  const committeeEmailError = touched.committeeEmail && !isValidEmail(committee.email) ? "Введите корректный email" : "";
 
   const submit = async () => {
     if (!accepted) {
@@ -97,20 +134,22 @@ export function RegisterEntry() {
             />
           </Field>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Номер телефона KZ">
+            <Field label="Номер телефона KZ" error={phoneError}>
               <input
                 value={candidate.phone}
                 onChange={(event) => setCandidate((current) => ({ ...current, phone: event.target.value }))}
-                className="auth-input"
+                onBlur={() => touch("phone")}
+                className={`auth-input ${phoneError ? "border-status-low/50" : ""}`}
                 placeholder="+77071234567"
                 autoComplete="tel"
               />
             </Field>
-            <Field label="Email">
+            <Field label="Email" error={emailError}>
               <input
                 value={candidate.email}
                 onChange={(event) => setCandidate((current) => ({ ...current, email: event.target.value }))}
-                className="auth-input"
+                onBlur={() => touch("email")}
+                className={`auth-input ${emailError ? "border-status-low/50" : ""}`}
                 placeholder="example@mail.com"
                 autoComplete="email"
               />
@@ -136,6 +175,7 @@ export function RegisterEntry() {
                 {showCandidatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
+            <PasswordStrengthBar password={candidate.password} />
           </Field>
         </div>
       ) : (
@@ -149,11 +189,12 @@ export function RegisterEntry() {
               autoComplete="name"
             />
           </Field>
-          <Field label="Рабочий email">
+          <Field label="Рабочий email" error={committeeEmailError}>
             <input
               value={committee.email}
               onChange={(event) => setCommittee((current) => ({ ...current, email: event.target.value }))}
-              className="auth-input"
+              onBlur={() => touch("committeeEmail")}
+              className={`auth-input ${committeeEmailError ? "border-status-low/50" : ""}`}
               autoComplete="email"
             />
           </Field>
@@ -178,6 +219,7 @@ export function RegisterEntry() {
                   {showCommitteePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              <PasswordStrengthBar password={committee.password} />
             </Field>
             <Field label="Код доступа комиссии">
               <input
@@ -235,15 +277,22 @@ export function RegisterEntry() {
 
 function Field({
   label,
+  error,
   children,
 }: {
   label: string;
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
-    <label className="block space-y-2.5">
+    <div className="block space-y-2.5">
       <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-text-muted">{label}</span>
       {children}
-    </label>
+      {error && (
+        <p className="field-error" role="alert">
+          <span aria-hidden="true">⚠</span> {error}
+        </p>
+      )}
+    </div>
   );
 }

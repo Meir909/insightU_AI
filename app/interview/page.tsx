@@ -96,7 +96,7 @@ function ProgressSidebar({
         </div>
 
         {scoreUpdate ? (
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-3" aria-live="polite" aria-atomic="true" aria-label="Промежуточная оценка обновлена">
             <div className="grid grid-cols-3 gap-2">
               <ScorePill label="Итог" value={scoreUpdate.final_score} />
               <ScorePill label="Доверие" value={`${Math.round(scoreUpdate.confidence * 100)}%`} />

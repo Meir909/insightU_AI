@@ -75,18 +75,16 @@ export default async function CandidatePage({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <div className="space-y-3">
-          <Link href="/dashboard" className="text-sm text-text-secondary transition-colors hover:text-white">
-            ← Назад к пулу кандидатов
-          </Link>
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-3xl font-black tracking-tight text-white">{candidate.name || candidate.code}</h2>
-            <span className="font-mono text-sm text-brand-green">{candidate.code}</span>
-            <StatusBadge status={candidate.status} />
-          </div>
-          <p className="text-sm text-text-secondary">{candidate.city} • {candidate.program}</p>
+      <div className="space-y-3">
+        <Link href="/dashboard" className="text-sm text-text-secondary transition-colors hover:text-white">
+          ← Назад к пулу кандидатов
+        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-3xl font-black tracking-tight text-white">{candidate.name || candidate.code}</h2>
+          <span className="font-mono text-sm text-brand-green">{candidate.code}</span>
+          <StatusBadge status={candidate.status} />
         </div>
+        <p className="text-sm text-text-secondary">{candidate.city} • {candidate.program}</p>
       </div>
 
       {/* Tabs (mobile) + content */}
@@ -95,133 +93,71 @@ export default async function CandidatePage({
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
             {/* Left column */}
             <div className="space-y-6">
-              {/* Overview: ScoreSphere + Confidence + AI Detection */}
-              <div className={cn("grid gap-5 lg:grid-cols-[0.9fr_1.1fr]", tab !== "overview" && "hidden xl:grid")}>
-                <div className="space-y-5">
-                  <div className="panel-soft p-6">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Итоговый score</p>
-                    <ScoreSpherePanel score={candidate.final_score} />
+              {/* Overview tab: ScoreSphere + Confidence + AI + Radar + Explainability + Growth */}
+              <section className={cn(tab !== "overview" && "hidden xl:block")}>
+                <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+                  <div className="space-y-5">
+                    <div className="panel-soft p-6">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Итоговый score</p>
+                      <ScoreSpherePanel score={candidate.final_score} />
+                    </div>
+                    <div className="panel-soft p-5">
+                      <ConfidenceRing confidence={candidate.confidence} />
+                    </div>
+                    <AIDetectionBadge probability={candidate.ai_detection_prob} signals={candidate.ai_signals} />
                   </div>
 
-                  <div className="panel-soft p-5">
-                    <ConfidenceRing confidence={candidate.confidence} />
+                  <div className="space-y-5">
+                    <div className="panel-soft p-5">
+                      <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Профиль измерений</p>
+                      <ScoreRadar scores={scores} />
+                    </div>
+                    <ExplainabilityBlock
+                      scores={scores}
+                      reasoning={candidate.reasoning}
+                      keyQuotes={candidate.key_quotes}
+                      explainabilityV2={candidate.explainability_v2}
+                    />
+                    <GrowthTimeline evaluations={evalHistory} />
                   </div>
-
-                  <AIDetectionBadge probability={candidate.ai_detection_prob} signals={candidate.ai_signals} />
                 </div>
 
-                {/* Scores: Radar + Explainability + GrowthTimeline */}
-                <div className={cn("space-y-5", tab === "scores" && "xl:block")}>
-                  <div className="panel-soft p-5">
-                    <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Профиль измерений</p>
-                    <ScoreRadar scores={scores} />
-                  </div>
-
-                  <ExplainabilityBlock
-                    scores={scores}
-                    reasoning={candidate.reasoning}
-                    keyQuotes={candidate.key_quotes}
-                    explainabilityV2={candidate.explainability_v2}
-                  />
-
-                  <GrowthTimeline evaluations={evalHistory} />
+                {/* Committee votes + artifacts (desktop, inside overview) */}
+                <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                  <CommitteeVotesPanel candidate={candidate} />
+                  <ArtifactsPanel candidate={candidate} />
                 </div>
-              </div>
+              </section>
 
               {/* Scores tab (mobile only) */}
-              <div className={cn("space-y-5", tab !== "scores" ? "hidden xl:hidden" : "block xl:hidden")}>
+              <section className={cn(tab !== "scores" ? "hidden xl:hidden" : "space-y-5 xl:hidden")}>
                 <div className="panel-soft p-5">
                   <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Профиль измерений</p>
                   <ScoreRadar scores={scores} />
                 </div>
-
                 <ExplainabilityBlock
                   scores={scores}
                   reasoning={candidate.reasoning}
                   keyQuotes={candidate.key_quotes}
                   explainabilityV2={candidate.explainability_v2}
                 />
-
                 <GrowthTimeline evaluations={evalHistory} />
-              </div>
+              </section>
 
               {/* Committee tab (mobile only) */}
-              <div className={cn("space-y-5", tab !== "committee" ? "hidden xl:hidden" : "block xl:hidden")}>
-                <div className="panel-soft p-5">
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="rounded-2xl bg-brand-green/10 p-3 text-brand-green">
-                      <ShieldCheck className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">Защита от предвзятости</p>
-                      <p className="text-xs text-text-muted">Коллегиальное решение комиссии</p>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-relaxed text-text-secondary">{candidate.committee_review?.corruptionGuard}</p>
-                  <div className="mt-4 space-y-3">
-                    {candidate.committee_review?.votes.map((vote) => (
-                      <div key={vote.memberId} className="panel-muted p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-sm font-semibold text-white">{vote.memberName}</p>
-                          <span className="rounded-full border border-white/8 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-green">
-                            {vote.decision}
-                          </span>
-                        </div>
-                        <p className="mt-2 text-sm leading-relaxed text-text-secondary">{vote.rationale}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <section className={cn(tab !== "committee" ? "hidden xl:hidden" : "space-y-5 xl:hidden")}>
+                <CommitteeVotesPanel candidate={candidate} />
+                <ArtifactsPanel candidate={candidate} />
+              </section>
 
-              {/* Committee section (desktop always visible) */}
-              <div className={cn("grid gap-5 lg:grid-cols-2", tab !== "overview" && "hidden xl:grid")}>
-                <div className="panel-soft p-5">
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="rounded-2xl bg-brand-green/10 p-3 text-brand-green">
-                      <ShieldCheck className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">Защита от предвзятости</p>
-                      <p className="text-xs text-text-muted">Коллегиальное решение комиссии</p>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-relaxed text-text-secondary">{candidate.committee_review?.corruptionGuard}</p>
-                  <div className="mt-4 space-y-3">
-                    {candidate.committee_review?.votes.map((vote) => (
-                      <div key={vote.memberId} className="panel-muted p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-sm font-semibold text-white">{vote.memberName}</p>
-                          <span className="rounded-full border border-white/8 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-green">
-                            {vote.decision}
-                          </span>
-                        </div>
-                        <p className="mt-2 text-sm leading-relaxed text-text-secondary">{vote.rationale}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="panel-soft p-5">
-                  <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Подтверждающие материалы</p>
-                  <div className="space-y-3">
-                    {candidate.artifacts?.slice(0, 3).map((artifact) => (
-                      <div key={artifact.id} className="panel-muted p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-sm font-semibold text-white">{artifact.name}</p>
-                          <span className="font-mono text-xs text-brand-green">{artifact.kind}</span>
-                        </div>
-                        <p className="mt-2 text-sm leading-relaxed text-text-secondary">{artifact.extractedSignals.join(" • ")}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              {/* Profile tab (mobile only) */}
+              <section className={cn(tab !== "profile" ? "hidden xl:hidden" : "space-y-4 xl:hidden")}>
+                <ProfilePanels candidate={candidate} />
+              </section>
             </div>
 
-            {/* Right column */}
-            <div className="space-y-4">
-              {/* Vote panel — always on desktop, only on committee tab on mobile */}
+            {/* Right column — vote panel + profile (always visible on desktop) */}
+            <aside className="space-y-4">
               <div className={cn(tab !== "committee" && "hidden xl:block")}>
                 {canVote(session?.role) ? (
                   <CommitteeVotePanel candidate={candidate} />
@@ -235,24 +171,85 @@ export default async function CandidatePage({
                 )}
               </div>
 
-              {/* Profile info — always on desktop, only on profile tab on mobile */}
               <div className={cn(tab !== "profile" && "hidden xl:block")}>
-                {[
-                  { label: "Цели кандидата", value: candidate.goals },
-                  { label: "Опыт", value: candidate.experience },
-                  { label: "Мотивация", value: candidate.motivation_text },
-                  { label: "Фрагмент эссе", value: candidate.essay_excerpt },
-                ].map((item) => (
-                  <div key={item.label} className="panel-soft p-5 mb-4">
-                    <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">{item.label}</p>
-                    <p className="text-sm leading-relaxed text-text-secondary">{item.value}</p>
-                  </div>
-                ))}
+                <ProfilePanels candidate={candidate} />
               </div>
-            </div>
+            </aside>
           </div>
         )}
       </CandidateTabs>
     </div>
+  );
+}
+
+// Extracted sub-components to avoid duplication
+
+function CommitteeVotesPanel({ candidate }: { candidate: Awaited<ReturnType<typeof getCandidate>> }) {
+  if (!candidate) return null;
+  return (
+    <div className="panel-soft p-5">
+      <div className="mb-3 flex items-center gap-3">
+        <div className="rounded-2xl bg-brand-green/10 p-3 text-brand-green">
+          <ShieldCheck className="h-4 w-4" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-white">Защита от предвзятости</p>
+          <p className="text-xs text-text-muted">Коллегиальное решение комиссии</p>
+        </div>
+      </div>
+      <p className="text-sm leading-relaxed text-text-secondary">{candidate.committee_review?.corruptionGuard}</p>
+      <div className="mt-4 space-y-3">
+        {candidate.committee_review?.votes.map((vote) => (
+          <div key={vote.memberId} className="panel-muted p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-white">{vote.memberName}</p>
+              <span className="rounded-full border border-white/8 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand-green">
+                {vote.decision}
+              </span>
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-text-secondary">{vote.rationale}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ArtifactsPanel({ candidate }: { candidate: Awaited<ReturnType<typeof getCandidate>> }) {
+  if (!candidate) return null;
+  return (
+    <div className="panel-soft p-5">
+      <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Подтверждающие материалы</p>
+      <div className="space-y-3">
+        {candidate.artifacts?.slice(0, 3).map((artifact) => (
+          <div key={artifact.id} className="panel-muted p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-white">{artifact.name}</p>
+              <span className="font-mono text-xs text-brand-green">{artifact.kind}</span>
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-text-secondary">{artifact.extractedSignals.join(" • ")}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProfilePanels({ candidate }: { candidate: Awaited<ReturnType<typeof getCandidate>> }) {
+  if (!candidate) return null;
+  return (
+    <>
+      {[
+        { label: "Цели кандидата", value: candidate.goals },
+        { label: "Опыт", value: candidate.experience },
+        { label: "Мотивация", value: candidate.motivation_text },
+        { label: "Фрагмент эссе", value: candidate.essay_excerpt },
+      ].map((item) => (
+        <div key={item.label} className="panel-soft p-5 mb-4">
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">{item.label}</p>
+          <p className="text-sm leading-relaxed text-text-secondary">{item.value}</p>
+        </div>
+      ))}
+    </>
   );
 }

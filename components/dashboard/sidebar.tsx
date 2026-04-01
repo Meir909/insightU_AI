@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { BarChart3, ChevronRight, LayoutDashboard, Radar, Star, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -16,6 +16,7 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-white/6 bg-bg-surface/95 backdrop-blur-sm lg:flex">
@@ -33,14 +34,14 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-0.5 px-3 py-4">
+      <nav className="flex-1 space-y-0.5 px-3 py-4" aria-label="Основная навигация">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
 
           return (
-            <Link key={href} href={href}>
+            <Link key={href} href={href} aria-current={active ? "page" : undefined}>
               <motion.div
-                whileHover={{ x: 2 }}
+                whileHover={prefersReducedMotion ? undefined : { x: 2 }}
                 transition={{ duration: 0.12 }}
                 className={cn(
                   "relative flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-green/35 active:scale-[0.98]",
@@ -51,13 +52,13 @@ export function Sidebar() {
               >
                 {/* Active left accent bar */}
                 {active && (
-                  <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-brand-green shadow-green-sm" />
+                  <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-brand-green shadow-green-sm" aria-hidden="true" />
                 )}
                 <div className="flex items-center gap-3">
-                  <Icon className="h-[18px] w-[18px]" />
+                  <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
                   {label}
                 </div>
-                {active ? <ChevronRight className="h-3.5 w-3.5" /> : null}
+                {active ? <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" /> : null}
               </motion.div>
             </Link>
           );
