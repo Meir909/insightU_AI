@@ -10,15 +10,15 @@ export default async function ShortlistPage() {
       <section className="rounded-[32px] border border-white/6 bg-bg-surface p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Finalists</p>
-            <h2 className="mt-2 text-3xl font-black tracking-tight text-white">Кандидаты с strongest fit для комиссии</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Финалисты</p>
+            <h2 className="mt-2 text-3xl font-black tracking-tight text-white">Кандидаты в шорт-листе</h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">
-              Здесь собраны профили с лучшим балансом по cognitive, growth, motivation и authenticity. Все рекомендации
-              остаются decision-support, а не автоотбором.
+              Профили с лучшим балансом по аналитике, мотивации, росту и аутентичности. Рекомендации AI носят
+              вспомогательный характер — итоговое решение за комиссией.
             </p>
           </div>
           <div className="rounded-full border border-brand-green/15 bg-brand-green/8 px-4 py-2 text-xs font-semibold text-brand-green">
-            {shortlist.length} finalists selected
+            {shortlist.length} финалистов
           </div>
         </div>
       </section>
@@ -37,9 +37,9 @@ export default async function ShortlistPage() {
 
             <div className="mb-5 grid grid-cols-3 gap-3">
               {[
-                { label: "Final", value: candidate.final_score.toFixed(1), icon: Star },
-                { label: "Confidence", value: `${Math.round(candidate.confidence * 100)}%`, icon: ShieldCheck },
-                { label: "AI risk", value: `${Math.round(candidate.ai_detection_prob * 100)}%`, icon: Sparkles },
+                { label: "Итог", value: candidate.final_score.toFixed(1), icon: Star },
+                { label: "Доверие", value: `${Math.round(candidate.confidence * 100)}%`, icon: ShieldCheck },
+                { label: "AI риск", value: `${Math.round(candidate.ai_detection_prob * 100)}%`, icon: Sparkles },
               ].map((item) => (
                 <div key={item.label} className="rounded-2xl border border-white/6 bg-bg-elevated p-3">
                   <item.icon className="mb-2 h-4 w-4 text-brand-green" />
@@ -51,7 +51,7 @@ export default async function ShortlistPage() {
 
             <p className="mb-4 text-sm leading-relaxed text-text-secondary">{candidate.reasoning}</p>
             <div className="rounded-2xl border border-brand-green/15 bg-brand-green/6 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand-green">Key quote</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand-green">Ключевая цитата</p>
               <p className="mt-2 text-sm italic leading-relaxed text-text-secondary">«{candidate.key_quotes[0]}»</p>
             </div>
           </article>

@@ -48,7 +48,7 @@ export function SessionControls({ compact = false }: { compact?: boolean }) {
   const meta =
     data.session.role === "candidate"
       ? data.session.phone
-      : data.session.email || (data.session.role === "viewer" ? "Read-only backoffice" : "Backoffice");
+      : data.session.email || (data.session.role === "viewer" ? "Только чтение" : "Комиссия");
   const profileHref = data.session.role === "candidate" ? "/account" : "/dashboard/account";
 
   return (

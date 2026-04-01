@@ -67,7 +67,7 @@ export default async function CandidatePage({
             <h2 className="text-3xl font-black tracking-tight text-white">{candidate.code}</h2>
             <StatusBadge status={candidate.status} />
           </div>
-          <p className="text-sm text-text-secondary">{candidate.city} • {candidate.program} • anonymized profile</p>
+          <p className="text-sm text-text-secondary">{candidate.city} • {candidate.program} • анонимизированный профиль</p>
         </div>
       </div>
 
@@ -109,7 +109,7 @@ export default async function CandidatePage({
                   <ShieldCheck className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-white">Anti-corruption guard</p>
+                  <p className="text-sm font-bold text-white">Защита от предвзятости</p>
                   <p className="text-xs text-text-muted">Коллегиальное решение комиссии</p>
                 </div>
               </div>
@@ -130,7 +130,7 @@ export default async function CandidatePage({
             </div>
 
             <div className="panel-soft p-5">
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Supporting evidence</p>
+              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Подтверждающие материалы</p>
               <div className="space-y-3">
                 {candidate.artifacts?.slice(0, 3).map((artifact) => (
                   <div key={artifact.id} className="panel-muted p-4">
@@ -151,9 +151,9 @@ export default async function CandidatePage({
             <CommitteeVotePanel candidate={candidate} />
           ) : (
             <div className="panel-soft p-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Review mode</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Режим просмотра</p>
               <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                Этот профиль открыт в режиме чтения. Голосование комиссии доступно только роли committee.
+                Этот профиль открыт в режиме чтения. Голосование доступно только членам комиссии.
               </p>
             </div>
           )}
