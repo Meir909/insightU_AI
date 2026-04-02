@@ -4,7 +4,6 @@ import { motion, useReducedMotion } from "framer-motion";
 import { BarChart3, ChevronRight, LayoutDashboard, Radar, Star, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SessionControls } from "@/components/auth/session-controls";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -73,10 +72,6 @@ export function Sidebar() {
         </div>
       </nav>
 
-      {/* Session */}
-      <div className="border-t border-white/6 px-4 py-4">
-        <SessionControls />
-      </div>
     </aside>
   );
 }
