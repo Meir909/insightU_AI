@@ -7,9 +7,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="dot-grid min-h-screen bg-bg-base">
       <Sidebar />
-      <div className="lg:ml-64">
+      <div className="lg:ml-72">
         <TopBar />
-        <main className="page-shell px-4 py-6 pb-24 lg:px-8 lg:pb-6">{children}</main>
+        <main className="px-4 py-6 pb-24 lg:px-10 lg:py-8 lg:pb-8 max-w-[1600px]">{children}</main>
       </div>
       <MobileNav />
     </div>
