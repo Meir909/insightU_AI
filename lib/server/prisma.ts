@@ -145,9 +145,19 @@ export async function createCandidate(data: {
   email?: string;
   phone?: string;
 }) {
-  const count = await prisma.candidate.count();
-  const code = `IU-${String(count + 2401).padStart(4, '0')}`;
-  
+  // Generate unique code with collision fallback
+  let code: string;
+  {
+    const count = await prisma.candidate.count();
+    let attempt = count + 2401;
+    while (true) {
+      const candidate_code = `IU-${String(attempt).padStart(4, '0')}`;
+      const existing = await prisma.candidate.findUnique({ where: { code: candidate_code }, select: { id: true } });
+      if (!existing) { code = candidate_code; break; }
+      attempt++;
+    }
+  }
+
   return prisma.candidate.create({
     data: {
       code,
@@ -206,7 +216,6 @@ export async function createCandidateAccountWithSession(data: {
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
 
   return prisma.$transaction(async (tx) => {
-    const count = await tx.candidate.count();
     const account = await tx.account.create({
       data: {
         role: "candidate",
@@ -217,9 +226,22 @@ export async function createCandidateAccountWithSession(data: {
       },
     });
 
+    // Generate a unique code: count-based with collision fallback
+    let code: string;
+    {
+      const count = await tx.candidate.count();
+      let attempt = count + 2401;
+      while (true) {
+        const candidate_code = `IU-${String(attempt).padStart(4, "0")}`;
+        const existing = await tx.candidate.findUnique({ where: { code: candidate_code }, select: { id: true } });
+        if (!existing) { code = candidate_code; break; }
+        attempt++;
+      }
+    }
+
     const candidate = await tx.candidate.create({
       data: {
-        code: `IU-${String(count + 2401).padStart(4, "0")}`,
+        code,
         accountId: account.id,
         fullName: data.name.trim(),
         email,
