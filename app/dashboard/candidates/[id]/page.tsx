@@ -37,7 +37,7 @@ export default async function CandidatePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [candidate, evaluationHistory] = await Promise.all([
+  const [candidateData, evaluationHistory] = await Promise.all([
     getCandidate(id),
     getCandidateEvaluationHistory(id).catch(() => []),
   ]);
@@ -51,9 +51,11 @@ export default async function CandidatePage({
     entityId: cookieStore.get(AUTH_ENTITY_COOKIE)?.value,
   });
 
-  if (!candidate) {
+  if (!candidateData) {
     notFound();
   }
+
+  const candidate = candidateData;
 
   const scores = {
     cognitive: candidate.cognitive,
