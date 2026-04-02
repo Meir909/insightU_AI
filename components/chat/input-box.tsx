@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUp, LoaderCircle, Paperclip, Video, Waves } from "lucide-react";
+import { ArrowUp, ImageIcon, LoaderCircle, Paperclip, Video, Waves } from "lucide-react";
 import type { ChatAttachment } from "@/lib/types";
 
 type InputBoxProps = {
@@ -43,6 +43,8 @@ export function InputBox({
                 <Waves className="h-3.5 w-3.5" />
               ) : attachment.kind === "video" ? (
                 <Video className="h-3.5 w-3.5" />
+              ) : attachment.mimeType?.startsWith("image/") ? (
+                <ImageIcon className="h-3.5 w-3.5" />
               ) : (
                 <Paperclip className="h-3.5 w-3.5" />
               )}
@@ -65,7 +67,7 @@ export function InputBox({
           <input
             type="file"
             multiple
-            accept="audio/*,video/*,.pdf,.doc,.docx,.txt"
+            accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt"
             disabled={disabled || uploading}
             onChange={(event) => {
               onFilesSelected(event.target.files);
@@ -95,7 +97,7 @@ export function InputBox({
         {/* Send button */}
         <button
           type="button"
-          disabled={disabled || loading || uploading || !value.trim()}
+          disabled={disabled || loading || uploading || (!value.trim() && attachments.length === 0)}
           onClick={onSubmit}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-green text-black transition-all hover:bg-brand-dim hover:shadow-green-sm active:scale-95 disabled:cursor-not-allowed disabled:opacity-35"
         >

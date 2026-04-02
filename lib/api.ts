@@ -5,6 +5,10 @@ import {
   getCandidateById,
   getCandidateStats,
 } from "@/lib/server/prisma";
+import {
+  getPersistedCandidate,
+  getPersistedCandidates,
+} from "@/lib/server/data-store";
 import type {
   Candidate,
   CandidateArtifact,
@@ -203,17 +207,42 @@ function mapCandidateSummary(record: Awaited<ReturnType<typeof getAllCandidates>
 
 export async function getRanking(): Promise<Candidate[]> {
   try {
-    const candidates = await getAllCandidates();
-    return candidates.map(mapCandidateSummary);
+    const [prismaRows, persistedRows] = await Promise.allSettled([
+      getAllCandidates().then((rows) => rows.map(mapCandidateSummary)),
+      getPersistedCandidates(),
+    ]);
+
+    const prismaList = prismaRows.status === "fulfilled" ? prismaRows.value : [];
+    const persistedList = persistedRows.status === "fulfilled" ? persistedRows.value : [];
+
+    // Merge: persisted candidates that don't exist in Prisma
+    const prismaIds = new Set(prismaList.map((c) => c.id));
+    const extras = persistedList.filter((c) => !prismaIds.has(c.id));
+
+    return [...prismaList, ...extras].sort((a, b) => b.final_score - a.final_score);
   } catch {
-    return [];
+    // Full fallback to persisted store
+    try {
+      return await getPersistedCandidates();
+    } catch {
+      return [];
+    }
   }
 }
 
 export async function getCandidate(id: string): Promise<Candidate | null> {
   try {
-    const candidate = await getCandidateById(id);
-    return candidate ? mapCandidateFromRecord(candidate) : null;
+    const prismaCandidate = await getCandidateById(id);
+    if (prismaCandidate) {
+      return mapCandidateFromRecord(prismaCandidate);
+    }
+  } catch {
+    // Prisma unavailable — fall through to persisted store
+  }
+
+  // Fallback: look up in the JSON-based data store
+  try {
+    return await getPersistedCandidate(id);
   } catch {
     return null;
   }
@@ -221,8 +250,20 @@ export async function getCandidate(id: string): Promise<Candidate | null> {
 
 export async function getShortlist(): Promise<Candidate[]> {
   try {
-    const candidates = await getAllCandidates("shortlisted");
-    return candidates.map(mapCandidateSummary);
+    const [prismaRows, persistedRows] = await Promise.allSettled([
+      getAllCandidates("shortlisted").then((rows) => rows.map(mapCandidateSummary)),
+      getPersistedCandidates().then((rows) =>
+        rows.filter((c) => c.status === "shortlisted" || c.committee_review?.finalDecision === "approved"),
+      ),
+    ]);
+
+    const prismaList = prismaRows.status === "fulfilled" ? prismaRows.value : [];
+    const persistedList = persistedRows.status === "fulfilled" ? persistedRows.value : [];
+
+    const prismaIds = new Set(prismaList.map((c) => c.id));
+    const extras = persistedList.filter((c) => !prismaIds.has(c.id));
+
+    return [...prismaList, ...extras];
   } catch {
     return [];
   }
