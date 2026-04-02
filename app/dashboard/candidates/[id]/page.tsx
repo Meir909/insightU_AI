@@ -105,7 +105,7 @@ export default async function CandidatePage({
               <span className="text-[11px] text-text-secondary">
                 Оценка:{" "}
                 <span className="font-semibold text-white">
-                  {new Date(candidate.updated_at).toLocaleString("ru-RU", {
+                  {new Date(candidate.updated_at ?? Date.now()).toLocaleString("ru-RU", {
                     day: "2-digit",
                     month: "short",
                     hour: "2-digit",
@@ -115,11 +115,11 @@ export default async function CandidatePage({
               </span>
             </div>
           )}
-          {candidate.ensemble && candidate.ensemble.length > 0 && (
+          {(candidate.ensemble?.length ?? 0) > 0 && (
             <div className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-bg-surface px-3 py-1.5">
               <Cpu className="h-3 w-3 text-brand-green" />
               <span className="text-[11px] text-text-secondary">
-                <span className="font-semibold text-brand-green">{candidate.ensemble.length}</span> модели ансамбля
+                <span className="font-semibold text-brand-green">{candidate.ensemble?.length ?? 0}</span> модели ансамбля
               </span>
             </div>
           )}
@@ -127,7 +127,7 @@ export default async function CandidatePage({
             <div className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-bg-surface px-3 py-1.5">
               <Activity className="h-3 w-3 text-text-muted" />
               <span className="font-mono text-[10px] text-text-muted">
-                {candidate.evaluation_session_id.slice(0, 8)}…
+                {candidate.evaluation_session_id?.slice(0, 8)}…
               </span>
             </div>
           )}

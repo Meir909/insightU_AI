@@ -1,9 +1,14 @@
 import { Resend } from "resend";
 import { logger } from "./logging";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM ?? "noreply@invisionu.kz";
 const COMMITTEE_NOTIFY_EMAIL = process.env.COMMITTEE_NOTIFY_EMAIL ?? "review@invisionu.kz";
+
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  return new Resend(apiKey);
+}
 
 /** Send welcome email to a newly registered candidate */
 export async function sendCandidateWelcome({
@@ -19,6 +24,8 @@ export async function sendCandidateWelcome({
 }) {
   const recipient = email;
   if (!recipient) return; // candidate registered without email
+  const resend = getResendClient();
+  if (!resend) return;
 
   try {
     await resend.emails.send({
@@ -64,6 +71,9 @@ export async function sendCommitteeWelcome({
   name: string;
   email: string;
 }) {
+  const resend = getResendClient();
+  if (!resend) return;
+
   try {
     await resend.emails.send({
       from: FROM,
@@ -106,6 +116,9 @@ export async function notifyCommitteeNewCandidate({
   candidateCity?: string | null;
   candidateProgram?: string | null;
 }) {
+  const resend = getResendClient();
+  if (!resend) return;
+
   try {
     await resend.emails.send({
       from: FROM,

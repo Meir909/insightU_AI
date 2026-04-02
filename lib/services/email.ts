@@ -6,10 +6,14 @@
 import { Resend } from 'resend';
 import { prisma } from '@/lib/server/prisma';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@invisionu.kz';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://invisionu.kz';
+
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  return new Resend(apiKey);
+}
 
 // ============================================================================
 // EMAIL TEMPLATES
@@ -267,8 +271,8 @@ interface SendEmailOptions {
 
 async function sendEmail(options: SendEmailOptions): Promise<{ success: boolean; error?: string }> {
   try {
-    // Check if we're in development mode without API key
-    if (!process.env.RESEND_API_KEY) {
+    const resend = getResendClient();
+    if (!resend) {
       console.log('[Email] Development mode - email not sent:', {
         to: options.to,
         subject: options.subject,
