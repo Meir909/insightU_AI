@@ -6,7 +6,7 @@ import { ChatWindow } from "@/components/chat/chat-window";
 import { InputBox } from "@/components/chat/input-box";
 import { ScorePill } from "@/components/chat/score-pill";
 import { useChat } from "@/hooks/use-chat";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 function phaseLabel(phase: string | undefined) {
@@ -165,6 +165,17 @@ function InterviewClient() {
   const [mobileTab, setMobileTab] = useState<"chat" | "progress">("chat");
   const isCompleted = status === "completed";
 
+  // Warn before leaving mid-interview
+  useEffect(() => {
+    if (isCompleted) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isCompleted]);
+
   return (
     <div className="mx-auto max-w-[1200px]">
       {/* Mobile tab bar */}
@@ -251,7 +262,7 @@ function InterviewClient() {
                   attachments={attachments}
                   loading={loading}
                   uploading={uploading}
-                  disabled={false}
+                  disabled={paused}
                 />
               )}
             </>

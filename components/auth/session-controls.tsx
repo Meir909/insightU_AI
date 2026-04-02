@@ -41,7 +41,11 @@ export function SessionControls({ compact = false }: { compact?: boolean }) {
   };
 
   if (!data) {
-    return null;
+    return (
+      <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-white/8 bg-bg-elevated">
+        <UserRound className="h-4 w-4 animate-pulse text-text-muted" />
+      </div>
+    );
   }
 
   const Icon = data.session.role === "candidate" ? UserRound : ShieldCheck;

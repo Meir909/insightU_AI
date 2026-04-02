@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowUpDown, ChevronLeft, ChevronRight, Search, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Candidate } from "@/lib/types";
@@ -45,21 +45,31 @@ function SkeletonRow() {
 
 const PAGE_SIZE = 10;
 
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
 export function CandidateTable({ candidates, loading = false }: { candidates: Candidate[]; loading?: boolean }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [sortDesc, setSortDesc] = useState(true);
   const [page, setPage] = useState(1);
+  const debouncedSearch = useDebounce(search, 200);
 
   const filtered = useMemo(() => {
-    const normalized = search.trim().toLowerCase();
+    const normalized = debouncedSearch.trim().toLowerCase();
     const list = candidates.filter((candidate) => {
       const haystack = [candidate.code, candidate.city, candidate.program, candidate.name].join(" ").toLowerCase();
       return haystack.includes(normalized);
     });
 
     return list.sort((a, b) => (sortDesc ? b.final_score - a.final_score : a.final_score - b.final_score));
-  }, [candidates, search, sortDesc]);
+  }, [candidates, debouncedSearch, sortDesc]);
 
   // Reset to page 1 on filter/sort change
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -102,9 +112,28 @@ export function CandidateTable({ candidates, loading = false }: { candidates: Ca
 
       {/* Skeleton loading */}
       {loading && (
-        <div className="hidden md:block">
-          {Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
-        </div>
+        <>
+          <div className="hidden md:block">
+            {Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
+          </div>
+          <div className="grid gap-3 p-3 md:hidden">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border border-white/6 bg-bg-elevated p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-2">
+                    <div className="skeleton h-3 w-20 rounded-full" />
+                    <div className="skeleton h-4 w-32 rounded-full" />
+                  </div>
+                  <div className="skeleton h-8 w-14 rounded-xl" />
+                </div>
+                <div className="flex gap-2">
+                  <div className="skeleton h-6 w-16 rounded-xl" />
+                  <div className="skeleton h-6 w-20 rounded-xl" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Empty state */}

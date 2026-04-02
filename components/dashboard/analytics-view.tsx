@@ -111,10 +111,11 @@ export function AnalyticsView({
                   <Tooltip
                     cursor={{ fill: "rgba(255,255,255,0.03)" }}
                     contentStyle={{
-                      background: "#1A1A1A",
+                      background: "var(--color-bg-surface, #141414)",
                       border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 14,
                       fontSize: 12,
+                      color: "#ffffff",
                     }}
                   />
                   <Bar dataKey="value" radius={[6, 6, 0, 0]}>
@@ -153,10 +154,11 @@ export function AnalyticsView({
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      background: "#1A1A1A",
+                      background: "var(--color-bg-surface, #141414)",
                       border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 14,
                       fontSize: 12,
+                      color: "#ffffff",
                     }}
                   />
                 </PieChart>

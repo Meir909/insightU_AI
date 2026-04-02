@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Loader2, Save, User } from "lucide-react";
 
 type ProfileData = {
   city: string;
+  customCity: string;
   goals: string;
   experience: string;
   motivationText: string;
@@ -14,6 +15,7 @@ type ProfileData = {
 
 const PLACEHOLDER: ProfileData = {
   city: "",
+  customCity: "",
   goals: "",
   experience: "",
   motivationText: "",
@@ -57,14 +59,19 @@ const textareaCls =
 export default function ProfilePage() {
   const router = useRouter();
   const [form, setForm] = useState<ProfileData>(PLACEHOLDER);
+  const initialFormRef = useRef<ProfileData>(PLACEHOLDER);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasExisting, setHasExisting] = useState(false);
 
+  const isDirty = JSON.stringify(form) !== JSON.stringify(initialFormRef.current);
+
   useEffect(() => {
-    void fetch("/api/candidates/me", { credentials: "include" })
+    const controller = new AbortController();
+
+    void fetch("/api/candidates/me", { credentials: "include", signal: controller.signal })
       .then((r) => r.json())
       .then((data) => {
         const c = data?.candidate;
@@ -73,17 +80,37 @@ export default function ProfilePage() {
             Boolean(c.city && c.city !== "Unspecified") ||
             Boolean(c.goals && !c.goals.startsWith("To be collected")),
           );
-          setForm({
-            city: c.city === "Unspecified" ? "" : (c.city ?? ""),
+          const loaded: ProfileData = {
+            city: c.city === "Unspecified" ? "" : (CITIES.includes(c.city) ? (c.city ?? "") : "Другой"),
+            customCity: c.city && !CITIES.includes(c.city) && c.city !== "Unspecified" ? (c.city ?? "") : "",
             goals: c.goals?.startsWith("To be collected") ? "" : (c.goals ?? ""),
             experience: c.experience?.startsWith("To be collected") ? "" : (c.experience ?? ""),
             motivationText: c.motivationText?.startsWith("To be collected") ? "" : (c.motivationText ?? ""),
-          });
+          };
+          setForm(loaded);
+          initialFormRef.current = loaded;
         }
       })
-      .catch(() => setError("Не удалось загрузить профиль"))
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.name !== "AbortError") {
+          setError("Не удалось загрузить профиль");
+        }
+      })
       .finally(() => setLoading(false));
+
+    return () => controller.abort();
   }, []);
+
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
 
   const set = (key: keyof ProfileData) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -91,7 +118,8 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.city || !form.goals || !form.motivationText) {
+    const cityValue = form.city === "Другой" ? form.customCity.trim() : form.city;
+    if (!cityValue || !form.goals || !form.motivationText) {
       setError("Заполните обязательные поля: город, цели, мотивация");
       return;
     }
@@ -102,12 +130,18 @@ export default function ProfilePage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          city: cityValue,
+          goals: form.goals,
+          experience: form.experience,
+          motivationText: form.motivationText,
+        }),
       });
       if (!res.ok) {
         const data = await res.json() as { error?: string };
         throw new Error(data.error ?? "Ошибка сохранения");
       }
+      initialFormRef.current = form; // reset dirty state
       setSaved(true);
       setTimeout(() => {
         router.push("/account");
@@ -121,8 +155,9 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="dot-grid flex min-h-screen items-center justify-center bg-bg-base">
+      <div className="dot-grid flex min-h-screen flex-col items-center justify-center gap-3 bg-bg-base">
         <Loader2 className="h-8 w-8 animate-spin text-brand-green" />
+        <p className="text-sm text-text-muted">Загружаем ваш профиль…</p>
       </div>
     );
   }
@@ -169,6 +204,15 @@ export default function ProfilePage() {
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
+              {form.city === "Другой" && (
+                <input
+                  className={`${inputCls} mt-2`}
+                  value={form.customCity}
+                  onChange={set("customCity")}
+                  placeholder="Введите название города"
+                  autoFocus
+                />
+              )}
             </Field>
           </div>
 
@@ -189,7 +233,9 @@ export default function ProfilePage() {
                 className={textareaCls}
                 maxLength={1000}
               />
-              <p className="mt-1 text-right text-[10px] text-text-muted">{form.goals.length}/1000</p>
+              <p className={`mt-1 text-right text-[10px] ${form.goals.length >= 950 ? "text-status-mid" : "text-text-muted"}`}>
+                {form.goals.length}/1000
+              </p>
             </Field>
 
             <Field
@@ -204,7 +250,9 @@ export default function ProfilePage() {
                 className={textareaCls}
                 maxLength={1000}
               />
-              <p className="mt-1 text-right text-[10px] text-text-muted">{form.experience.length}/1000</p>
+              <p className={`mt-1 text-right text-[10px] ${form.experience.length >= 950 ? "text-status-mid" : "text-text-muted"}`}>
+                {form.experience.length}/1000
+              </p>
             </Field>
 
             <Field
@@ -220,7 +268,9 @@ export default function ProfilePage() {
                 className={textareaCls}
                 maxLength={1500}
               />
-              <p className="mt-1 text-right text-[10px] text-text-muted">{form.motivationText.length}/1500</p>
+              <p className={`mt-1 text-right text-[10px] ${form.motivationText.length >= 1450 ? "text-status-mid" : "text-text-muted"}`}>
+                {form.motivationText.length}/1500
+              </p>
             </Field>
           </div>
 
@@ -229,6 +279,13 @@ export default function ProfilePage() {
             <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
               <p className="text-sm text-red-400">{error}</p>
             </div>
+          )}
+
+          {/* Unsaved changes hint */}
+          {isDirty && !saving && !saved && (
+            <p className="text-center text-[11px] text-text-muted">
+              Есть несохранённые изменения
+            </p>
           )}
 
           {/* Submit */}

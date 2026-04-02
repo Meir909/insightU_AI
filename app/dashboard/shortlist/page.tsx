@@ -33,20 +33,18 @@ export default async function ShortlistPage() {
                 ? { border: "border-slate-400/40", bg: "bg-slate-400/8", text: "text-slate-300", label: "#2" }
                 : rank === 3
                   ? { border: "border-orange-400/40", bg: "bg-orange-400/8", text: "text-orange-400", label: "#3" }
-                  : null;
+                  : { border: "border-white/6", bg: "bg-white/4", text: "text-text-muted", label: `#${rank}` };
 
           return (
             <article
               key={candidate.id}
-              className={`rounded-[28px] border bg-bg-surface p-5 transition-transform duration-150 hover:-translate-y-0.5 hover:shadow-md ${rankStyle ? rankStyle.border : "border-white/6"}`}
+              className={`rounded-[28px] border bg-bg-surface p-5 transition-transform duration-150 hover:-translate-y-0.5 hover:shadow-md ${rankStyle.border}`}
             >
               <div className="mb-5 flex items-start justify-between">
                 <div>
-                  {rankStyle && (
-                    <span className={`mb-2 inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-black ${rankStyle.bg} ${rankStyle.text}`}>
-                      {rankStyle.label} Место
-                    </span>
-                  )}
+                  <span className={`mb-2 inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-black ${rankStyle.bg} ${rankStyle.text}`}>
+                    {rankStyle.label} Место
+                  </span>
                   <p className="font-mono text-xs text-brand-green">{candidate.code}</p>
                   <h3 className="mt-1 text-xl font-black tracking-tight text-white">{candidate.name || candidate.code}</h3>
                   <p className="mt-0.5 text-sm text-text-secondary">{candidate.city} · {candidate.program}</p>
@@ -75,7 +73,9 @@ export default async function ShortlistPage() {
               <p className="mb-4 text-sm leading-relaxed text-text-secondary">{candidate.reasoning}</p>
               <div className="rounded-2xl border border-brand-green/15 bg-brand-green/6 p-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand-green">Ключевая цитата</p>
-                <p className="mt-2 text-sm leading-relaxed text-text-secondary">«{candidate.key_quotes[0]}»</p>
+                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-text-secondary">
+                  «{candidate.key_quotes?.[0] ?? "Нет ключевых цитат"}»
+                </p>
               </div>
             </article>
           );

@@ -260,6 +260,11 @@ a {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.btn-secondary:focus-visible {
+  outline: 2px solid rgba(200, 240, 0, 0.5);
+  outline-offset: 2px;
+}
+
 /* Skeleton shimmer loading */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
@@ -287,6 +292,16 @@ a {
   align-items: center;
   gap: 4px;
   line-height: 1.4;
+}
+
+/* Input with error state */
+.input-error {
+  border-color: rgba(229, 57, 53, 0.5) !important;
+}
+
+.input-error:focus {
+  border-color: rgba(229, 57, 53, 0.7) !important;
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.12) !important;
 }
 
 /* iPhone safe area bottom padding */

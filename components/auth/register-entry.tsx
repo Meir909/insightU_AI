@@ -33,16 +33,15 @@ function getPasswordStrength(pw: string): { level: 0 | 1 | 2 | 3; label: string;
 
 function PasswordStrengthBar({ password }: { password: string }) {
   const { level, label, color } = getPasswordStrength(password);
-  if (level === 0) return null;
   return (
     <div className="mt-2 space-y-1" aria-live="polite">
       <div className="flex gap-1">
         {[1, 2, 3].map((i) => (
-          <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= level ? color : "bg-white/10"}`} />
+          <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${level > 0 && i <= level ? color : "bg-white/10"}`} />
         ))}
       </div>
-      <p className={`text-[10px] font-semibold ${level === 1 ? "text-status-low" : level === 2 ? "text-status-mid" : "text-brand-green"}`}>
-        {label}
+      <p className={`text-[10px] ${level === 0 ? "text-text-muted" : level === 1 ? "text-status-low font-semibold" : level === 2 ? "text-status-mid font-semibold" : "text-brand-green font-semibold"}`}>
+        {level === 0 ? "Минимум 8 символов, буква и цифра" : label}
       </p>
     </div>
   );
@@ -59,6 +58,7 @@ export function RegisterEntry() {
   const [committee, setCommittee] = useState(defaultCommittee);
   const [accepted, setAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showCandidatePassword, setShowCandidatePassword] = useState(false);
   const [showCommitteePassword, setShowCommitteePassword] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -76,26 +76,32 @@ export function RegisterEntry() {
     }
 
     setSubmitting(true);
+    setErrorMsg(null);
     const payload =
       role === "candidate"
         ? { role, ...candidate, acceptedLegal: accepted }
         : { role, ...committee, acceptedLegal: accepted };
 
-    const response = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await response.json();
-    setSubmitting(false);
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json() as { error?: string; redirectTo?: string };
 
-    if (!response.ok) {
-      toast.error(data.error || "Не удалось создать аккаунт");
-      return;
+      if (!response.ok) {
+        setErrorMsg(data.error ?? "Не удалось создать аккаунт");
+        return;
+      }
+
+      router.push(data.redirectTo ?? "/");
+      router.refresh();
+    } catch {
+      setErrorMsg("Ошибка сети. Проверьте соединение и попробуйте снова.");
+    } finally {
+      setSubmitting(false);
     }
-
-    router.push(data.redirectTo);
-    router.refresh();
   };
 
   return (
@@ -169,7 +175,7 @@ export function RegisterEntry() {
                 type="button"
                 onClick={() => setShowCandidatePassword((v) => !v)}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary focus:outline-none"
-                tabIndex={-1}
+                tabIndex={0}
                 aria-label={showCandidatePassword ? "Скрыть пароль" : "Показать пароль"}
               >
                 {showCandidatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -213,7 +219,7 @@ export function RegisterEntry() {
                   type="button"
                   onClick={() => setShowCommitteePassword((v) => !v)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary focus:outline-none"
-                  tabIndex={-1}
+                  tabIndex={0}
                   aria-label={showCommitteePassword ? "Скрыть пароль" : "Показать пароль"}
                 >
                   {showCommitteePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -254,6 +260,12 @@ export function RegisterEntry() {
           .
         </span>
       </label>
+
+      {errorMsg && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3" role="alert">
+          <p className="text-sm text-red-400">{errorMsg}</p>
+        </div>
+      )}
 
       <button
         type="button"

@@ -72,10 +72,12 @@ export default async function CandidateAccountPage() {
     redirect("/sign-in");
   }
 
-  const progress = overview.session?.progress ?? 0;
+  const progress = Math.min(100, Math.max(0, overview.session?.progress ?? 0));
   const isCompleted = progress >= 100;
   const hasStarted = progress > 0;
   const applicationCompleted = overview.candidate.applicationCompleted;
+  const avatarInitials = overview.account.name.trim().slice(0, 2).toUpperCase() || "??";
+
 
   return (
     <div className="dot-grid min-h-screen bg-bg-base px-4 py-8 lg:px-8">
@@ -86,7 +88,7 @@ export default async function CandidateAccountPage() {
           <div className="flex items-center gap-4">
             {/* Avatar initials */}
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-green text-xl font-black text-black shadow-green-sm">
-              {overview.account.name.slice(0, 2).toUpperCase()}
+              {avatarInitials}
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Личный кабинет</p>

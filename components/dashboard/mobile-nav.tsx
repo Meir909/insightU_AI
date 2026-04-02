@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, LayoutDashboard, LogOut, Radar, Star } from "lucide-react";
+import { BarChart3, LayoutDashboard, LogOut, Radar, Star, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -36,9 +36,17 @@ export function MobileNav() {
           aria-label="Подтверждение выхода"
         >
           <div
-            className="mx-4 mb-4 w-full max-w-sm rounded-[28px] border border-white/10 bg-bg-surface p-6 shadow-xl"
+            className="relative mx-4 mb-4 w-full max-w-sm rounded-[28px] border border-white/10 bg-bg-surface p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              type="button"
+              onClick={() => setConfirmLogout(false)}
+              className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full text-text-muted transition hover:bg-white/8 hover:text-white"
+              aria-label="Закрыть"
+            >
+              <X className="h-4 w-4" />
+            </button>
             <p className="text-base font-bold text-white">Выйти из аккаунта?</p>
             <p className="mt-1 text-sm text-text-secondary">Вы будете перенаправлены на страницу входа.</p>
             <div className="mt-5 grid grid-cols-2 gap-3">

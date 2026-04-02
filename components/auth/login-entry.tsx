@@ -34,7 +34,6 @@ export function LoginEntry() {
 
       if (!response.ok) {
         setInlineError(data.error || "Не удалось выполнить вход");
-        toast.error(data.error || "Не удалось выполнить вход");
         return;
       }
 
@@ -42,7 +41,6 @@ export function LoginEntry() {
       router.refresh();
     } catch {
       setInlineError("Ошибка соединения, попробуйте ещё раз");
-      toast.error("Ошибка соединения, попробуйте ещё раз");
     } finally {
       setSubmitting(false);
     }
@@ -57,15 +55,17 @@ export function LoginEntry() {
       {/* Role selector */}
       <div className="grid grid-cols-2 gap-2 rounded-[20px] border border-white/8 bg-bg-elevated/70 p-1.5">
         {[
-          { key: "candidate" as Role, label: "Кандидат", icon: UserRound },
-          { key: "committee" as Role, label: "Комиссия", icon: LockKeyhole },
-        ].map(({ key, label, icon: Icon }) => {
+          { key: "candidate" as Role, label: "Кандидат", icon: UserRound, ariaLabel: "Войти как кандидат" },
+          { key: "committee" as Role, label: "Комиссия", icon: LockKeyhole, ariaLabel: "Войти как комиссия" },
+        ].map(({ key, label, icon: Icon, ariaLabel }) => {
           const active = role === key;
           return (
             <button
               key={key}
               type="button"
               onClick={() => { setRole(key); setInlineError(""); }}
+              aria-label={ariaLabel}
+              aria-pressed={active}
               className={`flex items-center justify-center gap-2 rounded-[16px] px-4 py-3 text-sm font-semibold transition-all ${
                 active
                   ? "bg-brand-green text-black shadow-green-sm"
@@ -109,7 +109,7 @@ export function LoginEntry() {
             type="button"
             onClick={() => setShowPassword((v) => !v)}
             className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary focus:outline-none"
-            tabIndex={-1}
+            tabIndex={0}
             aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
