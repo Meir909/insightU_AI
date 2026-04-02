@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { ShieldCheck } from "lucide-react";
+import { Activity, Clock, Cpu, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AIDetectionBadge } from "@/components/dashboard/ai-detection-badge";
@@ -85,6 +85,49 @@ export default async function CandidatePage({
           <StatusBadge status={candidate.status} />
         </div>
         <p className="text-sm text-text-secondary">{candidate.city} • {candidate.program}</p>
+
+        {/* Evaluation metadata strip */}
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          {candidate.updated_at && (
+            <div className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-bg-surface px-3 py-1.5">
+              <Clock className="h-3 w-3 text-text-muted" />
+              <span className="text-[11px] text-text-secondary">
+                Оценка:{" "}
+                <span className="font-semibold text-white">
+                  {new Date(candidate.updated_at).toLocaleString("ru-RU", {
+                    day: "2-digit",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </span>
+            </div>
+          )}
+          {candidate.ensemble && candidate.ensemble.length > 0 && (
+            <div className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-bg-surface px-3 py-1.5">
+              <Cpu className="h-3 w-3 text-brand-green" />
+              <span className="text-[11px] text-text-secondary">
+                <span className="font-semibold text-brand-green">{candidate.ensemble.length}</span> модели ансамбля
+              </span>
+            </div>
+          )}
+          {candidate.evaluation_session_id && (
+            <div className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-bg-surface px-3 py-1.5">
+              <Activity className="h-3 w-3 text-text-muted" />
+              <span className="font-mono text-[10px] text-text-muted">
+                {candidate.evaluation_session_id.slice(0, 8)}…
+              </span>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5 rounded-xl border border-brand-green/20 bg-brand-green/5 px-3 py-1.5">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-green opacity-60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-green" />
+            </span>
+            <span className="text-[11px] font-semibold text-brand-green">AI оценка активна</span>
+          </div>
+        </div>
       </div>
 
       {/* Tabs (mobile) + content */}

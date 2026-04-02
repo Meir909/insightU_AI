@@ -21,6 +21,7 @@ export function useChat() {
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [progress, setProgress] = useState(12);
   const [status, setStatus] = useState<"active" | "completed">("active");
+  const [paused, setPaused] = useState(false);
   const [scoreUpdate, setScoreUpdate] = useState<InterviewScoreUpdate | null>(null);
   const [phase, setPhase] = useState("Foundation");
 
@@ -69,9 +70,11 @@ export function useChat() {
     setAttachments((current) => current.filter((item) => item.id !== id));
   };
 
+  const togglePause = () => setPaused((v) => !v);
+
   const sendMessage = async () => {
     const trimmed = input.trim();
-    if ((!trimmed && attachments.length === 0) || loading || status === "completed") return;
+    if ((!trimmed && attachments.length === 0) || loading || status === "completed" || paused) return;
 
     const content =
       trimmed ||
@@ -127,6 +130,8 @@ export function useChat() {
     removeAttachment,
     progress,
     status,
+    paused,
+    togglePause,
     scoreUpdate,
     phase,
   };

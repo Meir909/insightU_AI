@@ -1,6 +1,7 @@
 import { AlertTriangle, Star, TrendingUp, Users } from "lucide-react";
 import { CandidateTable } from "@/components/dashboard/candidate-table";
 import { CompliancePanel } from "@/components/dashboard/compliance-panel";
+import { EvaluationPipelinePanel } from "@/components/dashboard/evaluation-pipeline-panel";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { getRanking } from "@/lib/api";
 
@@ -32,7 +33,7 @@ export default async function DashboardPage() {
         <KPICard title="На ручную проверку" value={flagged} icon={<AlertTriangle className="h-4 w-4" />} change={-2} index={3} />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Пул кандидатов</p>
@@ -42,6 +43,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="space-y-4">
+          <EvaluationPipelinePanel />
           <CompliancePanel />
         </div>
       </section>

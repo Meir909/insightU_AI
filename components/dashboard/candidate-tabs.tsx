@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 type Tab = "overview" | "scores" | "committee" | "profile";
 
-const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
+const tabs: { key: Tab; label: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }[] = [
   { key: "overview", label: "Обзор", icon: BarChart3 },
   { key: "scores", label: "Оценки", icon: ShieldCheck },
   { key: "committee", label: "Комиссия", icon: User },
