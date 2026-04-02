@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, LogOut, Shield, Sparkles, User, BarChart3, Hash, FileText, CheckCircle2, Clock, Users } from "lucide-react";
+import { ArrowRight, LogOut, Pencil, Shield, Sparkles, User, BarChart3, Hash, FileText, CheckCircle2, Clock, Users } from "lucide-react";
 import { getCandidateAccountOverview } from "@/lib/server/account-store";
 import {
   AUTH_EMAIL_COOKIE,
@@ -82,7 +82,7 @@ export default async function CandidateAccountPage() {
       <div className="page-shell space-y-6">
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             {/* Avatar initials */}
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-green text-xl font-black text-black shadow-green-sm">
@@ -97,15 +97,24 @@ export default async function CandidateAccountPage() {
               </p>
             </div>
           </div>
-          <form action="/api/auth/logout" method="POST">
-            <button
-              type="submit"
-              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-text-secondary transition hover:border-white/20 hover:text-white"
+          <div className="flex items-center gap-2">
+            <Link
+              href="/profile"
+              className="flex items-center gap-2 rounded-xl border border-brand-green/30 bg-brand-green/8 px-4 py-2 text-sm font-semibold text-brand-green transition hover:bg-brand-green/15"
             >
-              <LogOut className="h-4 w-4" />
-              Выйти
-            </button>
-          </form>
+              <Pencil className="h-4 w-4" />
+              {hasStarted || applicationCompleted ? "Редактировать профиль" : "Создать профиль"}
+            </Link>
+            <form action="/api/auth/logout" method="POST">
+              <button
+                type="submit"
+                className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-text-secondary transition hover:border-white/20 hover:text-white"
+              >
+                <LogOut className="h-4 w-4" />
+                Выйти
+              </button>
+            </form>
+          </div>
         </div>
 
         {/* Journey Timeline */}

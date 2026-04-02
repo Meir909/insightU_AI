@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { BotMessageSquare, CheckCircle2, MessageSquare, ShieldCheck, Sparkles, TrendingUp, ArrowLeft, Pause, Play } from "lucide-react";
-import { SessionControls } from "@/components/auth/session-controls";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { InputBox } from "@/components/chat/input-box";
 import { ScorePill } from "@/components/chat/score-pill";
@@ -56,21 +55,20 @@ function ProgressSidebar({
   scoreUpdate: ReturnType<typeof useChat>["scoreUpdate"];
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Progress card */}
-      <div className="panel-soft p-5">
+      <div className="rounded-2xl border border-white/6 bg-bg-surface p-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-brand-green p-2.5 text-black">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-green text-black">
             <BotMessageSquare className="h-4 w-4" />
           </div>
-          <div>
-            <p className="text-sm font-bold text-white">
+          <div className="min-w-0">
+            <p className="text-sm font-bold leading-none text-white">
               {isCompleted ? "Завершено" : "В процессе"}
             </p>
-            <p className="text-xs text-text-muted">{phaseLabel(phase)}</p>
+            <p className="mt-1 truncate text-xs text-text-muted">{phaseLabel(phase)}</p>
           </div>
         </div>
-
         <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/8">
           <div
             className="h-full rounded-full bg-brand-green transition-all duration-500"
@@ -78,60 +76,62 @@ function ProgressSidebar({
           />
         </div>
         <div className="mt-2 flex items-center justify-between">
-          <span className="font-mono text-sm text-brand-green">{progress}%</span>
+          <span className="font-mono text-sm font-bold text-brand-green">{progress}%</span>
           <span className="text-xs text-text-muted">из 100%</span>
         </div>
       </div>
 
       {/* Scoring panel */}
-      <div className="panel-soft p-5">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-brand-green/10 p-2.5 text-brand-green">
+      <div className="rounded-2xl border border-white/6 bg-bg-surface p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-green/10 text-brand-green">
             <Sparkles className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-sm font-bold text-white">Промежуточная оценка</p>
-            <p className="text-xs text-text-muted">Обновляется после каждого ответа</p>
+            <p className="text-sm font-bold leading-none text-white">Промежуточная оценка</p>
+            <p className="mt-1 text-xs text-text-muted">Обновляется после ответа</p>
           </div>
         </div>
 
         {scoreUpdate ? (
-          <div className="mt-4 space-y-3" aria-live="polite" aria-atomic="true" aria-label="Промежуточная оценка обновлена">
+          <div className="space-y-2.5" aria-live="polite" aria-atomic="true">
             <div className="grid grid-cols-3 gap-2">
               <ScorePill label="Итог" value={scoreUpdate.final_score} />
               <ScorePill label="Доверие" value={`${Math.round(scoreUpdate.confidence * 100)}%`} />
               <ScorePill label="AI риск" value={`${Math.round(scoreUpdate.ai_detection_prob * 100)}%`} />
             </div>
-
             <div className="grid grid-cols-2 gap-2">
               <ScorePill label="Аналитика" value={scoreUpdate.cognitive} />
               <ScorePill label="Лидерство" value={scoreUpdate.leadership} />
               <ScorePill label="Рост" value={scoreUpdate.growth} />
               <ScorePill label="Решения" value={scoreUpdate.decision} />
             </div>
-
-            <div className="panel-muted p-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">Рекомендация AI</p>
-              <p className="mt-2 text-sm font-semibold text-white">{scoreUpdate.recommendation}</p>
-              <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">{scoreUpdate.explanation}</p>
-            </div>
+            {scoreUpdate.recommendation && (
+              <div className="rounded-xl border border-white/6 bg-bg-elevated p-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">Рекомендация AI</p>
+                <p className="mt-1.5 text-xs font-semibold text-white">{scoreUpdate.recommendation}</p>
+                {scoreUpdate.explanation && (
+                  <p className="mt-1 text-[11px] leading-relaxed text-text-secondary">{scoreUpdate.explanation}</p>
+                )}
+              </div>
+            )}
           </div>
         ) : (
-          <p className="mt-4 text-sm text-text-muted">
-            Промежуточная оценка появится после первого ответа.
+          <p className="text-xs text-text-muted">
+            Появится после первого ответа.
           </p>
         )}
       </div>
 
       {/* Human review note */}
-      <div className="panel-soft p-5">
+      <div className="rounded-2xl border border-white/6 bg-bg-surface p-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-brand-green/10 p-2.5 text-brand-green">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-green/10 text-brand-green">
             <ShieldCheck className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-sm font-bold text-white">Роль комиссии</p>
-            <p className="text-xs text-text-muted">AI помогает, но не решает</p>
+            <p className="text-sm font-bold leading-none text-white">Роль комиссии</p>
+            <p className="mt-1 text-xs text-text-muted">AI помогает, но не решает</p>
           </div>
         </div>
         <p className="mt-3 text-xs leading-relaxed text-text-secondary">
@@ -166,8 +166,8 @@ function InterviewClient() {
   const isCompleted = status === "completed";
 
   return (
-    <div className="page-shell">
-      {/* Mobile tab bar (hidden on xl) */}
+    <div className="mx-auto max-w-[1200px]">
+      {/* Mobile tab bar */}
       <div className="mb-4 xl:hidden">
         <div className="tab-bar">
           <button
@@ -184,29 +184,32 @@ function InterviewClient() {
             onClick={() => setMobileTab("progress")}
           >
             <TrendingUp className="h-4 w-4" />
-            Прогресс{progress > 0 && <span className="ml-1 font-mono text-[10px] text-brand-green">{progress}%</span>}
+            Прогресс
+            {progress > 0 && (
+              <span className="ml-1 font-mono text-[10px] text-brand-green">{progress}%</span>
+            )}
           </button>
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
-        {/* Main column — chat */}
-        <section className={cn("space-y-4", mobileTab === "progress" && "hidden xl:block")}>
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+        {/* Main column */}
+        <section className={cn("flex flex-col gap-4", mobileTab === "progress" && "hidden xl:flex")}>
           {/* Header */}
-          <div className="flex flex-col gap-4 rounded-2xl border border-white/6 bg-bg-surface/80 p-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-bg-surface px-5 py-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-text-muted">AI-интервью · inVision U</p>
-              <h1 className="mt-1 text-2xl font-black tracking-tight text-white">Сессия интервью</h1>
+              <h1 className="mt-0.5 text-xl font-black tracking-tight text-white">Сессия интервью</h1>
             </div>
-            <div className="flex items-center gap-3">
-              {/* Mini progress bar in header on mobile */}
+            <div className="flex items-center gap-2">
+              {/* Mobile mini progress */}
               <div className="flex items-center gap-2 xl:hidden">
-                <div className="h-1 w-20 overflow-hidden rounded-full bg-white/10">
+                <div className="h-1 w-16 overflow-hidden rounded-full bg-white/10">
                   <div className="h-full rounded-full bg-brand-green transition-all" style={{ width: `${progress}%` }} />
                 </div>
                 <span className="font-mono text-xs text-brand-green">{progress}%</span>
               </div>
-              {/* Pause / Resume button */}
+              {/* Pause/Resume */}
               {!isCompleted && (
                 <button
                   type="button"
@@ -223,7 +226,6 @@ function InterviewClient() {
                   {paused ? "Продолжить" : "Пауза"}
                 </button>
               )}
-              <SessionControls compact />
             </div>
           </div>
 
@@ -254,16 +256,9 @@ function InterviewClient() {
               )}
             </>
           )}
-
-          {isCompleted && messages.length > 0 && (
-            <div className="panel-soft p-4">
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">История интервью</p>
-              <ChatWindow messages={messages} loading={false} />
-            </div>
-          )}
         </section>
 
-        {/* Sidebar — progress */}
+        {/* Sidebar */}
         <aside className={cn(mobileTab === "chat" && "hidden xl:block")}>
           <ProgressSidebar
             progress={progress}

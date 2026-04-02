@@ -27,26 +27,41 @@ export function InputBox({
   disabled,
 }: InputBoxProps) {
   return (
-    <div className="panel-soft p-3 transition-shadow duration-200 focus-within:shadow-green-sm">
-      {attachments.length > 0 ? (
-        <div className="mb-3 flex flex-wrap gap-2 px-2 pt-1">
+    <div className="rounded-[20px] border border-white/8 bg-bg-surface transition-shadow duration-200 focus-within:border-brand-green/25 focus-within:shadow-green-sm">
+      {/* Attachments */}
+      {attachments.length > 0 && (
+        <div className="flex flex-wrap gap-2 border-b border-white/6 px-4 py-3">
           {attachments.map((attachment) => (
             <button
               key={attachment.id}
               type="button"
               onClick={() => onRemoveAttachment(attachment.id)}
-              className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary transition-colors hover:border-brand-green/20 hover:text-white"
+              className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary transition-colors hover:border-red-500/30 hover:text-red-400"
+              title="Удалить"
             >
-              {attachment.kind === "audio" ? <Waves className="h-3.5 w-3.5" /> : attachment.kind === "video" ? <Video className="h-3.5 w-3.5" /> : <Paperclip className="h-3.5 w-3.5" />}
+              {attachment.kind === "audio" ? (
+                <Waves className="h-3.5 w-3.5" />
+              ) : attachment.kind === "video" ? (
+                <Video className="h-3.5 w-3.5" />
+              ) : (
+                <Paperclip className="h-3.5 w-3.5" />
+              )}
               {attachment.name}
+              <span className="text-[10px] opacity-50">✕</span>
             </button>
           ))}
         </div>
-      ) : null}
+      )}
 
-      <div className="flex items-end gap-2.5">
-        <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-white/8 bg-bg-elevated text-text-muted transition-all hover:border-brand-green/25 hover:text-white">
-          {uploading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+      {/* Input row */}
+      <div className="flex items-end gap-3 px-3 py-3">
+        {/* Attach button */}
+        <label className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/8 bg-bg-elevated text-text-muted transition-all hover:border-brand-green/25 hover:text-brand-green">
+          {uploading ? (
+            <LoaderCircle className="h-4 w-4 animate-spin" />
+          ) : (
+            <Paperclip className="h-4 w-4" />
+          )}
           <input
             type="file"
             multiple
@@ -60,9 +75,10 @@ export function InputBox({
           />
         </label>
 
+        {/* Textarea */}
         <textarea
           autoFocus
-          rows={2}
+          rows={1}
           value={value}
           disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
@@ -72,16 +88,22 @@ export function InputBox({
               onSubmit();
             }
           }}
-          placeholder="Напишите ответ... (Enter — отправить, Shift+Enter — перенос строки)"
-          className="min-h-[52px] max-h-40 flex-1 resize-none bg-transparent px-2 py-2.5 text-sm leading-relaxed text-white outline-none placeholder:text-text-muted disabled:opacity-50"
+          placeholder="Напишите ответ…"
+          className="min-h-[40px] max-h-36 flex-1 resize-none bg-transparent py-2.5 text-sm leading-relaxed text-white outline-none placeholder:text-text-muted disabled:opacity-50"
         />
+
+        {/* Send button */}
         <button
           type="button"
           disabled={disabled || loading || uploading || !value.trim()}
           onClick={onSubmit}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-green text-black transition-all hover:bg-brand-dim hover:shadow-green-sm active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-green text-black transition-all hover:bg-brand-dim hover:shadow-green-sm active:scale-95 disabled:cursor-not-allowed disabled:opacity-35"
         >
-          {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
+          {loading ? (
+            <LoaderCircle className="h-4 w-4 animate-spin" />
+          ) : (
+            <ArrowUp className="h-4 w-4" />
+          )}
         </button>
       </div>
     </div>
