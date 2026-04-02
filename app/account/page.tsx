@@ -15,21 +15,28 @@ import {
 
 function statusLabel(status: string) {
   switch (status) {
+    case "in_progress": return "В процессе";
     case "pending": return "Ожидает рассмотрения";
+    case "completed": return "Завершено";
     case "shortlisted": return "В шорт-листе";
+    case "accepted": return "Принят";
     case "approved": return "Одобрен";
     case "rejected": return "Отклонён";
     case "flagged": return "На проверке";
+    case "withdrawn": return "Отозвана";
     default: return status;
   }
 }
 
 function statusColor(status: string) {
   switch (status) {
-    case "approved": return "text-brand-green";
+    case "accepted":
+    case "approved":
     case "shortlisted": return "text-brand-green";
-    case "rejected": return "text-red-400";
+    case "rejected":
+    case "withdrawn": return "text-red-400";
     case "flagged": return "text-yellow-400";
+    case "completed": return "text-blue-400";
     default: return "text-text-secondary";
   }
 }
@@ -102,9 +109,9 @@ export default async function CandidateAccountPage() {
         </div>
 
         {/* Journey Timeline */}
-        <div className="panel-soft p-5">
-          <p className="mb-5 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Ваш путь</p>
-          <div className="flex items-start">
+        <div className="panel-soft p-6">
+          <p className="mb-6 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Ваш путь</p>
+          <div className="flex items-start gap-0">
             {[
               {
                 label: "Анкета",
@@ -127,46 +134,48 @@ export default async function CandidateAccountPage() {
               {
                 label: "Комиссия",
                 icon: Users,
-                done: overview.candidate.status === "approved" || overview.candidate.status === "shortlisted",
+                done: overview.candidate.status === "accepted" || overview.candidate.status === "approved" || overview.candidate.status === "shortlisted",
                 active: false,
               },
               {
                 label: "Решение",
                 icon: CheckCircle2,
-                done: overview.candidate.status === "approved",
+                done: overview.candidate.status === "accepted" || overview.candidate.status === "approved",
                 active: false,
               },
             ].map((step, idx, arr) => {
               const Icon = step.icon;
               return (
                 <div key={step.label} className="flex flex-1 flex-col items-center">
-                  {/* Icon row with connector lines */}
+                  {/* Connector + icon row */}
                   <div className="flex w-full items-center">
-                    {/* Left connector */}
                     {idx > 0 && (
-                      <div className={`h-px flex-1 ${arr[idx - 1].done ? "bg-brand-green" : "bg-white/10"}`} />
+                      <div className={`h-0.5 flex-1 transition-colors ${arr[idx - 1].done ? "bg-brand-green" : "bg-white/10"}`} />
                     )}
-                    {/* Step icon */}
                     <div
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border-2 transition-all ${
                         step.done
-                          ? "border-brand-green bg-brand-green text-black"
+                          ? "border-brand-green bg-brand-green text-black shadow-green-sm"
                           : step.active
                             ? "border-brand-green bg-brand-green/10 text-brand-green"
-                            : "border-white/15 text-text-muted"
+                            : "border-white/12 bg-white/3 text-text-muted"
                       }`}
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon className="h-4.5 w-4.5 h-[18px] w-[18px]" />
                     </div>
-                    {/* Right connector */}
                     {idx < arr.length - 1 && (
-                      <div className={`h-px flex-1 ${step.done ? "bg-brand-green" : "bg-white/10"}`} />
+                      <div className={`h-0.5 flex-1 transition-colors ${step.done ? "bg-brand-green" : "bg-white/10"}`} />
                     )}
                   </div>
                   {/* Label */}
-                  <p className={`mt-2 text-center text-[10px] font-semibold leading-tight ${step.active ? "text-brand-green" : step.done ? "text-white" : "text-text-muted"}`}>
+                  <p className={`mt-2.5 text-center text-[11px] font-semibold leading-tight ${
+                    step.active ? "text-brand-green" : step.done ? "text-white" : "text-text-muted"
+                  }`}>
                     {step.label}
                   </p>
+                  {step.active && (
+                    <span className="mt-1 text-[9px] font-bold uppercase tracking-wide text-brand-green/70">сейчас</span>
+                  )}
                 </div>
               );
             })}
