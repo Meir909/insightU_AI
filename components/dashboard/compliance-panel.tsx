@@ -23,7 +23,7 @@ export function CompliancePanel() {
     <div className="rounded-[28px] border border-white/6 bg-bg-surface p-5">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Decision rules</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Правила решений · Compliance</p>
           <h3 className="mt-1 text-xl font-black tracking-tight text-white">Коллегиальное решение комиссии</h3>
         </div>
         <span className="mt-1 shrink-0 rounded-xl border border-brand-green/20 bg-brand-green/8 px-2.5 py-1 text-[10px] font-semibold text-brand-green">

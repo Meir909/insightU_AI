@@ -69,7 +69,7 @@ export function AnalyticsView({
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
+      {/* Заголовок страницы */}
       <div>
         <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Аналитика · inVision U</p>
         <h2 className="mt-1 text-3xl font-black tracking-tight text-white">Статистика пула кандидатов</h2>
@@ -78,18 +78,18 @@ export function AnalyticsView({
         </p>
       </div>
 
-      {/* Top KPI row */}
+      {/* Верхние KPI метрики */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard label="Fairness score" value={fairnessScore} helper="Целевой уровень выше 80" accent />
         <StatCard label="Средняя уверенность" value={avgConfidence} suffix="%" helper="Базовая уверенность по когорте" accent />
         <StatCard label="Доля ручной проверки" value={manualReviewRate} suffix="%" helper="AI risk и low confidence" />
       </section>
 
-      {/* Charts row */}
+      {/* Графики */}
       <section className="grid gap-5 xl:grid-cols-[1.4fr_1fr]">
-        {/* Bar chart */}
+        {/* Столбчатая диаграмма */}
         <div className="rounded-[24px] border border-white/6 bg-bg-surface p-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Dimension distribution</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Распределение измерений</p>
           <h3 className="mt-1 text-xl font-black tracking-tight text-white">Средние скоры по 6 измерениям</h3>
           <div className="mt-6 h-[280px]">
             {mounted ? (
@@ -131,9 +131,9 @@ export function AnalyticsView({
           </div>
         </div>
 
-        {/* Pie chart + legend */}
+        {/* Круговая диаграмма + легенда */}
         <div className="rounded-[24px] border border-white/6 bg-bg-surface p-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Status split</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Воронка статусов</p>
           <h3 className="mt-1 text-xl font-black tracking-tight text-white">Воронка решений комиссии</h3>
           <div className="mt-4 h-[200px]">
             {mounted ? (
@@ -181,7 +181,7 @@ export function AnalyticsView({
         </div>
       </section>
 
-      {/* Bottom KPI row */}
+      {/* Нижние KPI метрики */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
           label="Средний итоговый score"

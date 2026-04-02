@@ -15,7 +15,7 @@ const jetBrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "InsightU AI",
-  description: "Admin dashboard for InsightU AI candidate evaluation.",
+  description: "InsightU AI — интеллектуальная система поддержки отбора кандидатов в inVision U. AI-интервью, explainability, committee dashboard.",
 };
 
 export default function RootLayout({

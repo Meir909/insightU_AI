@@ -110,7 +110,7 @@ export function EvaluationPipelinePanel() {
             <Activity className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">AI Pipeline</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">AI Pipeline · Конвейер</p>
             <h3 className="text-base font-black tracking-tight text-white">Конвейер оценки кандидатов</h3>
           </div>
         </div>

@@ -38,7 +38,8 @@ export default async function BackofficeAccountPage() {
         <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Личный кабинет</p>
         <div>
           <h2 className="text-3xl font-black tracking-tight text-white">{overview.account.name}</h2>
-          <p className="mt-2 text-sm text-text-secondary">{overview.account.email}</p>
+          <p className="mt-1 text-sm text-text-secondary">{overview.account.email}</p>
+          <p className="mt-1 inline-flex items-center rounded-full border border-brand-green/20 bg-brand-green/8 px-3 py-1 text-xs font-semibold text-brand-green">Член комиссии</p>
         </div>
       </section>
 

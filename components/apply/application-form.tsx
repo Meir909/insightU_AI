@@ -422,6 +422,8 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
               <button
                 type="button"
                 onClick={() => set("hasLeadershipExperience", !form.hasLeadershipExperience)}
+                aria-label={form.hasLeadershipExperience ? "Есть опыт лидерства" : "Нет опыта лидерства"}
+                aria-pressed={form.hasLeadershipExperience}
                 className={`relative h-7 w-12 rounded-full transition-colors duration-200 ${form.hasLeadershipExperience ? "bg-brand-green" : "bg-white/15"}`}
               >
                 <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-md transition-all duration-200 ${form.hasLeadershipExperience ? "left-6" : "left-1"}`} />
@@ -445,6 +447,8 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
               <button
                 type="button"
                 onClick={() => set("hasTeamExperience", !form.hasTeamExperience)}
+                aria-label={form.hasTeamExperience ? "Есть командный опыт" : "Нет командного опыта"}
+                aria-pressed={form.hasTeamExperience}
                 className={`relative h-7 w-12 rounded-full transition-colors duration-200 ${form.hasTeamExperience ? "bg-brand-green" : "bg-white/15"}`}
               >
                 <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-md transition-all duration-200 ${form.hasTeamExperience ? "left-6" : "left-1"}`} />

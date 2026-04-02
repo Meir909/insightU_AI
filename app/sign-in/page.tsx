@@ -16,7 +16,7 @@ export default function SignInPage() {
           </div>
 
           <div className="max-w-3xl space-y-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-text-muted">Secure sign in</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-text-muted">Безопасный вход · inVision U</p>
             <h1 className="text-5xl font-black leading-[0.94] tracking-[-0.05em] text-white md:text-7xl">
               Безопасный вход
               <span className="block text-brand-green">в личный кабинет</span>

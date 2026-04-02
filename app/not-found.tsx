@@ -13,8 +13,7 @@ export default function NotFound() {
         </p>
         <h1 className="mt-3 text-4xl font-black tracking-tight text-white">Страница не найдена</h1>
         <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-          Возможно, маршрут изменился или профиль кандидата больше не существует в текущем mock
-          pool.
+          Возможно, маршрут изменился или запрашиваемая страница больше недоступна. Проверьте ссылку или вернитесь на главную.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link

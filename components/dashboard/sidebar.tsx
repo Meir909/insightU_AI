@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { SessionControls } from "@/components/auth/session-controls";
 import { BarChart3, ChevronRight, LayoutDashboard, Radar, Star, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -72,6 +73,10 @@ export function Sidebar() {
         </div>
       </nav>
 
+      {/* Account section at bottom */}
+      <div className="border-t border-white/6 p-4">
+        <SessionControls />
+      </div>
     </aside>
   );
 }

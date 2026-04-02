@@ -287,7 +287,7 @@ function ProfilePanels({ candidate }: { candidate: Awaited<ReturnType<typeof get
         { label: "Опыт", value: candidate.experience },
         { label: "Мотивация", value: candidate.motivation_text },
         { label: "Фрагмент эссе", value: candidate.essay_excerpt },
-      ].map((item) => (
+      ].filter((item) => item.value).map((item) => (
         <div key={item.label} className="panel-soft p-5 mb-4">
           <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">{item.label}</p>
           <p className="text-sm leading-relaxed text-text-secondary">{item.value}</p>
