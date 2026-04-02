@@ -10,7 +10,6 @@ type ProfileData = {
   goals: string;
   experience: string;
   motivationText: string;
-  essayExcerpt: string;
 };
 
 const PLACEHOLDER: ProfileData = {
@@ -18,7 +17,6 @@ const PLACEHOLDER: ProfileData = {
   goals: "",
   experience: "",
   motivationText: "",
-  essayExcerpt: "",
 };
 
 const CITIES = [
@@ -80,7 +78,6 @@ export default function ProfilePage() {
             goals: c.goals?.startsWith("To be collected") ? "" : (c.goals ?? ""),
             experience: c.experience?.startsWith("To be collected") ? "" : (c.experience ?? ""),
             motivationText: c.motivationText?.startsWith("To be collected") ? "" : (c.motivationText ?? ""),
-            essayExcerpt: c.essayExcerpt ?? "",
           });
         }
       })
@@ -224,20 +221,6 @@ export default function ProfilePage() {
                 maxLength={1500}
               />
               <p className="mt-1 text-right text-[10px] text-text-muted">{form.motivationText.length}/1500</p>
-            </Field>
-
-            <Field
-              label="Фрагмент эссе"
-              hint="Необязательно. Вставьте отрывок из вашего сочинения или личного заявления"
-            >
-              <textarea
-                rows={3}
-                value={form.essayExcerpt}
-                onChange={set("essayExcerpt")}
-                placeholder="Краткий отрывок из эссе или сочинения…"
-                className={textareaCls}
-                maxLength={800}
-              />
             </Field>
           </div>
 

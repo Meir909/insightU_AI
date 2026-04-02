@@ -55,15 +55,9 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json() as {
       city?: string;
-      dateOfBirth?: string;
-      schoolName?: string;
       goals?: string;
       experience?: string;
       motivationText?: string;
-      essayExcerpt?: string;
-      skills?: string[];
-      portfolioUrl?: string;
-      telegramHandle?: string;
     };
 
     const updated = await prisma.candidate.update({
@@ -73,7 +67,6 @@ export async function PATCH(request: NextRequest) {
         ...(body.goals !== undefined && { goals: body.goals }),
         ...(body.experience !== undefined && { experience: body.experience }),
         ...(body.motivationText !== undefined && { motivationText: body.motivationText }),
-        ...(body.essayExcerpt !== undefined && { essayExcerpt: body.essayExcerpt }),
         updatedAt: new Date(),
       },
     });
