@@ -217,15 +217,23 @@ export async function createCandidateAccountWithSession(data: {
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
 
   return prisma.$transaction(async (tx) => {
-    const account = await tx.account.create({
-      data: {
-        role: "candidate",
-        name: data.name.trim(),
-        email,
-        phone,
-        passwordHash: data.passwordHash,
-      },
-    });
+    let account;
+    try {
+      account = await tx.account.create({
+        data: {
+          role: "candidate",
+          name: data.name.trim(),
+          email,
+          phone,
+          passwordHash: data.passwordHash,
+        },
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        throw new Error("Аккаунт с таким email или телефоном уже существует");
+      }
+      throw err;
+    }
 
     // Generate a unique code: count-based with collision fallback
     let code: string;
@@ -248,10 +256,10 @@ export async function createCandidateAccountWithSession(data: {
         email,
         phone,
         status: "in_progress",
-        city: "Unspecified",
-        goals: "To be collected during the interview.",
-        experience: "To be collected during the interview.",
-        motivationText: "To be collected during the interview.",
+        city: "Не указан",
+        goals: "Цели будут заполнены после отправки анкеты.",
+        experience: "Опыт будет указан после отправки анкеты.",
+        motivationText: "Мотивация будет заполнена после отправки анкеты.",
         interviewSession: {
           create: {
             progress: 12,
