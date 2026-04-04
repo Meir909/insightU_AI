@@ -31,6 +31,18 @@ export const STRICT_RATE_LIMIT: RateLimitConfig = {
   maxRequests: 5, // 5 requests per minute for sensitive endpoints
 };
 
+// Registration-specific: max 3 accounts per IP per hour
+export const REGISTER_RATE_LIMIT: RateLimitConfig = {
+  windowMs: 60 * 60 * 1000, // 1 hour window
+  maxRequests: 3,
+};
+
+// Login-specific: max 10 attempts per IP per 15 minutes (brute-force protection)
+export const LOGIN_RATE_LIMIT: RateLimitConfig = {
+  windowMs: 15 * 60 * 1000,
+  maxRequests: 10,
+};
+
 export function rateLimit(
   identifier: string,
   config: RateLimitConfig = DEFAULT_RATE_LIMIT

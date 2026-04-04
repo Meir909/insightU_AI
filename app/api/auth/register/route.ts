@@ -3,7 +3,7 @@ import { z } from "zod";
 import { registerCandidateAccount, registerCommitteeAccount } from "@/lib/server/account-store";
 import { applyAuthCookies, type AuthSession } from "@/lib/server/auth";
 import { hashPassword } from "@/lib/server/password";
-import { addSecurityHeaders, sanitizeObject } from "@/lib/server/security";
+import { addSecurityHeaders, sanitizeObject, rateLimit, REGISTER_RATE_LIMIT } from "@/lib/server/security";
 import { createAuditLog } from "@/lib/server/prisma";
 import { sendCandidateWelcome, sendCommitteeWelcome, notifyCommitteeNewCandidate } from "@/lib/server/email";
 
@@ -30,6 +30,33 @@ const committeeSchema = z.object({
 const registerSchema = z.discriminatedUnion("role", [candidateSchema, committeeSchema]);
 
 export async function POST(request: NextRequest) {
+  // ── Anti-spam / DDoS: max 3 registrations per IP per hour ──────────────────
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
+
+  const rl = rateLimit(`register:${ip}`, REGISTER_RATE_LIMIT);
+  if (!rl.allowed) {
+    const retryAfter = Math.ceil((rl.resetTime - Date.now()) / 1000);
+    return addSecurityHeaders(
+      NextResponse.json(
+        {
+          error: `Слишком много попыток регистрации. Повторите через ${Math.ceil(retryAfter / 60)} мин.`,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(retryAfter),
+            "X-RateLimit-Limit": String(REGISTER_RATE_LIMIT.maxRequests),
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": String(rl.resetTime),
+          },
+        },
+      ),
+    );
+  }
+
   let rawPayload: z.infer<typeof registerSchema>;
   try {
     const body = await request.json();

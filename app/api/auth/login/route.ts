@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createLoginSession, findAccountForLogin } from "@/lib/server/account-store";
 import { applyAuthCookies, type AuthSession } from "@/lib/server/auth";
 import { verifyPassword } from "@/lib/server/password";
-import { addSecurityHeaders, sanitizeObject } from "@/lib/server/security";
+import { addSecurityHeaders, sanitizeObject, rateLimit, LOGIN_RATE_LIMIT } from "@/lib/server/security";
 import { createAuditLog } from "@/lib/server/prisma";
 
 const loginSchema = z.object({
@@ -13,6 +13,31 @@ const loginSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // ── Brute-force protection: max 10 login attempts per IP per 15 min ─────────
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
+
+  const rl = rateLimit(`login:${ip}`, LOGIN_RATE_LIMIT);
+  if (!rl.allowed) {
+    const retryAfter = Math.ceil((rl.resetTime - Date.now()) / 1000);
+    return addSecurityHeaders(
+      NextResponse.json(
+        { error: `Слишком много попыток входа. Повторите через ${Math.ceil(retryAfter / 60)} мин.` },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(retryAfter),
+            "X-RateLimit-Limit": String(LOGIN_RATE_LIMIT.maxRequests),
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": String(rl.resetTime),
+          },
+        },
+      ),
+    );
+  }
+
   try {
     const rawPayload = loginSchema.parse(await request.json());
     const payload = sanitizeObject(rawPayload) as z.infer<typeof loginSchema>;
