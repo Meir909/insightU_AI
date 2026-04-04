@@ -30,8 +30,12 @@ export function ChatWindow({
         ))}
         {loading ? (
           <div className="flex justify-start" aria-live="assertive" aria-atomic="true">
-            <div className="rounded-[20px] border border-white/6 bg-white/[0.03] px-4 py-3 text-sm text-text-secondary">
-              AI думает...
+            <div className="rounded-[20px] border border-white/6 bg-white/[0.03] px-4 py-3.5">
+              <span className="flex items-center gap-1" aria-label="AI печатает...">
+                <span className="h-1.5 w-1.5 rounded-full bg-text-muted animate-bounce [animation-delay:0ms]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-text-muted animate-bounce [animation-delay:150ms]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-text-muted animate-bounce [animation-delay:300ms]" />
+              </span>
             </div>
           </div>
         ) : null}

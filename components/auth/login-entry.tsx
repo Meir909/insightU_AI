@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, Eye, EyeOff, LoaderCircle, LockKeyhole, RefreshCw, UserRound } from "lucide-react";
+import { AlertTriangle, ArrowRight, Eye, EyeOff, LoaderCircle, LockKeyhole, RefreshCw, UserRound, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -19,6 +19,7 @@ export function LoginEntry() {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [resetting, setResetting] = useState(false);
   const [resetDone, setResetDone] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const submit = async () => {
     setInlineError("");
@@ -60,11 +61,11 @@ export function LoginEntry() {
       setInlineError("Введите email или телефон для сброса аккаунта");
       return;
     }
-    const confirmed = window.confirm(
-      `Удалить аккаунт «${identifier.trim()}»?\n\nВсе данные (профиль, интервью, оценки) будут безвозвратно удалены. После этого можно зарегистрироваться заново.`,
-    );
-    if (!confirmed) return;
+    setShowDeleteModal(true);
+  };
 
+  const confirmDeleteAccount = async () => {
+    setShowDeleteModal(false);
     setResetting(true);
     setInlineError("");
     try {
@@ -92,6 +93,38 @@ export function LoginEntry() {
   };
 
   return (
+    <>
+    {/* Delete confirmation modal */}
+    {showDeleteModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
+        <div className="relative w-full max-w-sm rounded-3xl border border-white/8 bg-bg-surface p-6 shadow-2xl">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-status-low/12 border border-status-low/20">
+            <Trash2 className="h-5 w-5 text-status-low" />
+          </div>
+          <h3 className="text-base font-bold text-white">Удалить аккаунт?</h3>
+          <p className="mt-2 text-sm leading-relaxed text-text-secondary">
+            Аккаунт <span className="font-semibold text-white">{identifier}</span> будет безвозвратно удалён вместе со всеми данными. Это действие нельзя отменить.
+          </p>
+          <div className="mt-5 flex gap-3">
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(false)}
+              className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-text-secondary transition-all hover:bg-white/8 hover:text-white"
+            >
+              Отмена
+            </button>
+            <button
+              type="button"
+              onClick={() => void confirmDeleteAccount()}
+              className="flex-1 rounded-xl bg-status-low px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-status-low/80"
+            >
+              Удалить
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     <div className="space-y-5">
       {/* Role selector */}
       <div className="grid grid-cols-2 gap-2 rounded-[20px] border border-white/8 bg-bg-elevated/70 p-1.5">
@@ -238,5 +271,6 @@ export function LoginEntry() {
         </p>
       </div>
     </div>
+    </>
   );
 }
