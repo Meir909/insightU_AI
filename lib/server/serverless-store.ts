@@ -34,12 +34,12 @@ export interface InterviewSession {
   id: string;
   candidateId: string;
   accountId: string;
-  messages: any[];
-  artifacts: any[];
+  messages: unknown[];
+  artifacts: unknown[];
   progress: number;
   status: 'active' | 'completed';
   phase: string;
-  scoreUpdate?: any;
+  scoreUpdate?: unknown;
   createdAt: string;
   updatedAt: string;
 }
@@ -61,7 +61,7 @@ interface Store {
 
 // Use globalThis for cross-request persistence
 export function getStore(): Store {
-  const g = globalThis as any;
+  const g = globalThis as typeof globalThis & { __INSIGHTU_STORE__?: Store };
   if (!g.__INSIGHTU_STORE__) {
     g.__INSIGHTU_STORE__ = {
       accounts: [],

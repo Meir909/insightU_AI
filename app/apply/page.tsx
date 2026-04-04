@@ -56,7 +56,11 @@ export default async function ApplyPage() {
 
         {/* Form panel */}
         <div className="panel-soft grain p-6 shadow-2xl shadow-black/25 md:p-8">
-          <ApplicationForm prefillName={session.name} />
+          <ApplicationForm
+            prefillName={session.name}
+            prefillEmail={session.email}
+            prefillPhone={session.phone}
+          />
         </div>
 
         {/* Privacy note */}

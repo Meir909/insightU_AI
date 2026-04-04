@@ -17,6 +17,6 @@ export function handleError(error: unknown) {
   );
 }
 
-export function successResponse(data: any) {
+export function successResponse(data: unknown) {
   return NextResponse.json(data);
 }

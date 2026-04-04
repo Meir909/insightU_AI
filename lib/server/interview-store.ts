@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import type { Prisma } from "@prisma/client";
 import type { ChatAttachment, ChatMessage } from "@/lib/types";
 import { getAssistantReply, getInterviewMeta } from "@/lib/server/interviewer";
 import { scoreInterview } from "@/lib/server/interview-scoring";
@@ -148,12 +149,13 @@ export async function appendUserMessage(
     sessionId: session.sessionId,
     role: "user",
     content: contentWithArtifacts,
-    scoreUpdate: null,
+    scoreUpdate: undefined,
   });
 
   const userMessages = [...session.messages.filter((message) => message.role === "user").map((message) => message.content), contentWithArtifacts];
   const allArtifacts = [...session.artifacts, ...attachments];
   const scoreUpdate = scoreInterview(userMessages, allArtifacts);
+  const scoreUpdatePayload = JSON.parse(JSON.stringify(scoreUpdate)) as Prisma.InputJsonValue;
 
   const assistant = await getAssistantReply(
     [...session.messages, makeMessage("user", contentWithArtifacts, attachments)],
@@ -170,7 +172,7 @@ export async function appendUserMessage(
     sessionId: session.sessionId,
     role: "assistant",
     content: assistant.reply,
-    scoreUpdate,
+    scoreUpdate: scoreUpdatePayload,
   });
 
   await updateInterviewProgress(session.sessionId, assistant.progress, getInterviewMeta(userMessages.length), {

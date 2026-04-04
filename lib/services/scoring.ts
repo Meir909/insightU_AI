@@ -42,13 +42,14 @@ Return strict JSON matching this schema:
 
   try {
     const { result } = await completeWithFallback(systemPrompt, userPrompt, fallback, { temperature: 0.2, maxTokens: 2000 });
+    const parsed = result && typeof result === "object" ? (result as Partial<MultiDimensionalScore>) : fallback;
 
     const scores: MultiDimensionalScore = {
-      hard_skills: result.hard_skills as DimensionScore,
-      soft_skills: result.soft_skills as DimensionScore,
-      problem_solving: result.problem_solving as DimensionScore,
-      communication: result.communication as DimensionScore,
-      adaptability: result.adaptability as DimensionScore,
+      hard_skills: (parsed.hard_skills as DimensionScore) ?? fallback.hard_skills,
+      soft_skills: (parsed.soft_skills as DimensionScore) ?? fallback.soft_skills,
+      problem_solving: (parsed.problem_solving as DimensionScore) ?? fallback.problem_solving,
+      communication: (parsed.communication as DimensionScore) ?? fallback.communication,
+      adaptability: (parsed.adaptability as DimensionScore) ?? fallback.adaptability,
     };
 
     console.log(`[MultiDimensionalScorer.score] DONE`);
@@ -92,11 +93,20 @@ Return JSON:
 
   try {
     const { result } = await completeWithFallback(systemPrompt, transcript, fallback, { temperature: 0.2, maxTokens: 500 });
+    const parsed =
+      result && typeof result === "object"
+        ? (result as Partial<{
+            confidence_level: number;
+            hesitation_detected: boolean;
+            evasiveness_score: number;
+            behavioral_flags: string[];
+          }>)
+        : fallback;
     return {
-      confidence_level: result.confidence_level ?? 0.5,
-      hesitation_detected: result.hesitation_detected ?? false,
-      evasiveness_score: result.evasiveness_score ?? 0.5,
-      behavioral_flags: result.behavioral_flags ?? [],
+      confidence_level: parsed.confidence_level ?? 0.5,
+      hesitation_detected: parsed.hesitation_detected ?? false,
+      evasiveness_score: parsed.evasiveness_score ?? 0.5,
+      behavioral_flags: parsed.behavioral_flags ?? [],
     };
   } catch (error) {
     console.error(`[detectBehavioralSignals] AI FAILURE | error=${error}`);

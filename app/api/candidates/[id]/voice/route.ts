@@ -57,7 +57,7 @@ export async function POST(
 
     const analysis = question
       ? await analyzeAudio(bytes, audio.type)
-      : await analyzeVoiceMessage(bytes, audio.type, context);
+      : await analyzeVoiceMessage(bytes, audio.type);
 
     const artifact = await createArtifact({
       candidateId: id,

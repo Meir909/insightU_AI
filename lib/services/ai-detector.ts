@@ -123,9 +123,11 @@ Return JSON only: {"ai_probability": number, "key_reason": string}`;
     temperature: 0.1,
     maxTokens: 150,
   });
+  const parsedResult =
+    result && typeof result === "object" ? (result as { ai_probability?: number }) : undefined;
 
-  const prob = typeof result.ai_probability === "number"
-    ? Math.max(0, Math.min(1, result.ai_probability))
+  const prob = typeof parsedResult?.ai_probability === "number"
+    ? Math.max(0, Math.min(1, parsedResult.ai_probability))
     : 0.4;
 
   return { prob, used_fallback: usedFallback };

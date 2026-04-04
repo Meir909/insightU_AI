@@ -5,7 +5,7 @@ const openai = new OpenAI({
 });
 
 export interface LLMResponse {
-  result: any;
+  result: unknown;
   usedFallback: boolean;
 }
 
@@ -18,7 +18,7 @@ export async function complete(
     maxTokens?: number;
     expectJson?: boolean;
   } = {}
-): Promise<any> {
+): Promise<unknown> {
   const {
     model = 'gpt-4o',
     temperature = 0.2,
@@ -60,7 +60,7 @@ export async function complete(
 export async function completeWithFallback(
   systemPrompt: string,
   userPrompt: string,
-  fallbackValue: any,
+  fallbackValue: unknown,
   options: {
     model?: string;
     temperature?: number;

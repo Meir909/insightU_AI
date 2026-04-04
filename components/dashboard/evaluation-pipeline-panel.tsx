@@ -150,7 +150,7 @@ export function EvaluationPipelinePanel() {
           </button>
         </div>
 
-        {PIPELINE_STAGES.map((stage, i) => {
+        {PIPELINE_STAGES.map((stage) => {
           const pct = Math.round(stage.weight * 100);
           return (
             <div key={stage.id} className="rounded-2xl border border-white/6 bg-bg-elevated/60 p-3">

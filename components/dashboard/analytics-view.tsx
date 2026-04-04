@@ -199,6 +199,93 @@ export function AnalyticsView({
           helper="Число сигналов, требующих проверки комиссией"
         />
       </section>
+
+      {/* Fairness & Transparency Panel */}
+      <section className="rounded-[24px] border border-white/6 bg-bg-surface p-6 space-y-6">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Принципы оценки</p>
+          <h3 className="mt-1 text-xl font-black tracking-tight text-white">Честность и прозрачность системы</h3>
+          <p className="mt-2 text-sm leading-relaxed text-text-secondary">
+            Система оценивает кандидатов по содержанию их ответов и достижений. Ниже описаны принципы, которые защищают от предвзятости.
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {/* Что НЕ учитывается */}
+          <div className="rounded-[20px] border border-white/6 bg-bg-elevated p-5">
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-red-400">Не учитывается</p>
+            <ul className="space-y-2">
+              {[
+                "Пол и гендерная идентичность",
+                "Социально-экономический статус",
+                "Этническое происхождение",
+                "Религиозные убеждения",
+                "Место рождения",
+                "Фотографии и внешность",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2 text-xs text-text-secondary">
+                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-400/60" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Когда включается manual review */}
+          <div className="rounded-[20px] border border-white/6 bg-bg-elevated p-5">
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-yellow-400">Ручная проверка</p>
+            <p className="mb-3 text-xs leading-relaxed text-text-secondary">Комиссия получает уведомление и обязана лично просмотреть профиль, если:</p>
+            <ul className="space-y-2">
+              {[
+                "Уверенность AI < 55% (противоречивые сигналы)",
+                "AI-риск выше 70% (возможно нечестный ответ)",
+                "Разброс между оценщиками > 20 баллов",
+                "Аномальное голосование члена комиссии (z-score > 2)",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2 text-xs text-text-secondary">
+                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-yellow-400/60" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Audit trail */}
+          <div className="rounded-[20px] border border-white/6 bg-bg-elevated p-5">
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-brand-green">Аудит</p>
+            <p className="mb-3 text-xs leading-relaxed text-text-secondary">Каждое действие в системе логируется и не может быть удалено:</p>
+            <ul className="space-y-2">
+              {[
+                "Регистрация и авторизация кандидата",
+                "Отправка анкеты с временной меткой",
+                "Каждый ответ в AI-интервью",
+                "Голосование каждого члена комиссии",
+                "Изменения статуса и финальное решение",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2 text-xs text-text-secondary">
+                  <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-green/60" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Escalation warning */}
+        {(scoreSpread > 15 || manualReviewRate > 35) && (
+          <div className="flex items-start gap-3 rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-4">
+            <span className="mt-0.5 text-yellow-400">⚠</span>
+            <div>
+              <p className="text-sm font-bold text-yellow-400">Требуется внимание комиссии</p>
+              <p className="mt-1 text-xs leading-relaxed text-text-secondary">
+                {scoreSpread > 15 && `Разброс оценок между городами (${scoreSpread.toFixed(1)} баллов) превышает допустимый порог 15. `}
+                {manualReviewRate > 35 && `Доля ручной проверки (${manualReviewRate}%) выше целевого уровня 35%. `}
+                Рекомендуется провести коллегиальный разбор затронутых профилей.
+              </p>
+            </div>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

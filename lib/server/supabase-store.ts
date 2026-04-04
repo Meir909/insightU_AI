@@ -1,6 +1,5 @@
 import { randomUUID } from "crypto";
 import { enrichCandidate } from "@/lib/evaluation";
-import { env } from "@/lib/env";
 import { getSupabaseAdmin } from "@/lib/server/supabase";
 import type {
   Candidate,

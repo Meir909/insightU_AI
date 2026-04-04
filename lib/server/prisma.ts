@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { PrismaClient, VoteDecision } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -113,7 +113,7 @@ export async function getCandidateByAccountId(accountId: string) {
 }
 
 export async function getAllCandidates(status?: 'in_progress' | 'completed' | 'shortlisted' | 'rejected' | 'flagged' | 'accepted' | 'withdrawn') {
-  const where = status ? { status: status as any } : {};
+  const where = status ? { status } : {};
   
   return prisma.candidate.findMany({
     where,
@@ -183,7 +183,7 @@ export async function createCandidate(data: {
   });
 }
 
-export async function updateCandidate(id: string, data: any) {
+export async function updateCandidate(id: string, data: Prisma.CandidateUpdateInput) {
   return prisma.candidate.update({
     where: { id },
     data: {
@@ -204,6 +204,7 @@ export async function createCandidateAccountWithSession(data: {
 
   const existing = await prisma.account.findFirst({
     where: {
+      role: "candidate",
       OR: [{ phone }, ...(email ? [{ email }] : [])],
     },
   });
@@ -390,7 +391,7 @@ export async function getCandidateApplicationRecord(candidateId: string) {
     return null;
   }
 
-  const snapshot = (latestApplicationAudit?.details ?? {}) as Record<string, any>;
+  const snapshot = (latestApplicationAudit?.details ?? {}) as Record<string, unknown>;
   const latestEvaluation = candidate.evaluations[0];
 
   return {
@@ -624,7 +625,7 @@ export async function addInterviewMessage(data: {
   content: string;
   type?: 'text' | 'audio' | 'video' | 'document';
   mediaUrl?: string;
-  scoreUpdate?: any;
+  scoreUpdate?: Prisma.InputJsonValue;
 }) {
   return prisma.interviewMessage.create({
     data: {
@@ -642,7 +643,7 @@ export async function updateInterviewProgress(
   sessionId: string,
   progress: number,
   phase?: string,
-  scores?: any
+  scores?: Prisma.InterviewSessionUpdateInput
 ) {
   return prisma.interviewSession.update({
     where: { id: sessionId },
@@ -666,7 +667,7 @@ export async function createArtifact(data: {
   url: string;
   size: number;
   mimeType?: string;
-  analysis?: any;
+  analysis?: Prisma.InputJsonValue;
 }) {
   return prisma.artifact.create({
     data: {
@@ -681,7 +682,7 @@ export async function createArtifact(data: {
   });
 }
 
-export async function updateArtifactAnalysis(id: string, analysis: any) {
+export async function updateArtifactAnalysis(id: string, analysis: Prisma.InputJsonValue) {
   return prisma.artifact.update({
     where: { id },
     data: { analysis },
@@ -799,9 +800,9 @@ export async function createEvaluation(data: {
   authenticity?: number;
   overallScore?: number;
   confidence?: number;
-  strengths?: any;
-  weaknesses?: any;
-  redFlags?: any;
+  strengths?: Prisma.InputJsonValue;
+  weaknesses?: Prisma.InputJsonValue;
+  redFlags?: Prisma.InputJsonValue;
   recommendation?: string;
   reasoning?: string;
   evaluatorType?: string;
@@ -1080,7 +1081,7 @@ export async function createAuditLog(data: {
   actorId?: string;
   actorType: string;
   actorName?: string;
-  details?: any;
+  details?: Prisma.InputJsonValue;
   ipAddress?: string;
   userAgent?: string;
 }) {
@@ -1100,7 +1101,7 @@ export async function createAuditLog(data: {
 }
 
 export async function getAuditLogs(entityType?: string, entityId?: string) {
-  const where: any = {};
+  const where: { entityType?: string; entityId?: string } = {};
   if (entityType) where.entityType = entityType;
   if (entityId) where.entityId = entityId;
 

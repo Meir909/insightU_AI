@@ -37,7 +37,7 @@ function mapVotes(
         : vote.decision === "rejected"
           ? "reject"
           : "hold",
-    rationale: vote.notes || vote.recommendation || "Committee review saved.",
+    rationale: vote.notes || vote.recommendation || "Решение комиссии сохранено.",
     createdAt: vote.createdAt.toISOString(),
   }));
 }
@@ -118,8 +118,8 @@ function mapCandidateFromRecord(
     id: record.id,
     code: record.code,
     name: record.fullName,
-    city: record.city || "Unspecified",
-    program: record.institution || "inVision U Applicant",
+    city: record.city || "Не указан",
+    program: record.institution || "Кандидат inVision U",
     status: record.status,
     final_score: record.overallScore ?? latestEvaluation?.overallScore ?? 0,
     cognitive: interview?.cognitiveScore ?? latestEvaluation?.problemSolving ?? 0,
@@ -141,14 +141,14 @@ function mapCandidateFromRecord(
     needs_manual_review: aiRisk >= 0.45 || confidence <= 0.65,
     reasoning:
       latestEvaluation?.reasoning ||
-      "Система использует только реальные данные кандидата, загруженные артефакты и результаты scoring по интервью-сессии.",
+      "Оценка формируется на основе данных анкеты, загруженных артефактов и результатов AI-интервью. Финальное решение принимает комиссия.",
     key_quotes:
       interview?.messages
         .filter((message) => message.role === "user")
         .slice(0, 2)
         .map((message) => message.content) || [],
-    goals: record.goals || "Goals will appear after application submission.",
-    experience: record.experience || "Experience will appear after application submission.",
+    goals: record.goals || "Цели будут заполнены после отправки анкеты.",
+    experience: record.experience || "Опыт будет указан после отправки анкеты.",
     motivation_text: record.motivationText || record.whyInVision || "",
     essay_excerpt: record.changeAgentVision || "",
     artifacts: mapArtifacts(record.artifacts),
@@ -167,8 +167,8 @@ function mapCandidateSummary(record: Awaited<ReturnType<typeof getAllCandidates>
     id: record.id,
     code: record.code,
     name: record.fullName,
-    city: record.city || "Unspecified",
-    program: record.institution || "inVision U Applicant",
+    city: record.city || "Не указан",
+    program: record.institution || "Кандидат inVision U",
     status: record.status,
     final_score: record.overallScore ?? latestEvaluation?.overallScore ?? 0,
     cognitive: 0,
@@ -182,10 +182,10 @@ function mapCandidateSummary(record: Awaited<ReturnType<typeof getAllCandidates>
     ai_signals: [],
     needs_manual_review: record.status === "flagged",
     reasoning:
-      latestEvaluation?.reasoning || "Detailed explainability appears after full evaluation and review.",
+      latestEvaluation?.reasoning || "Подробное объяснение появится после прохождения интервью и полной оценки.",
     key_quotes: [],
-    goals: record.goals || "Goals will appear after application submission.",
-    experience: record.experience || "Experience will appear after application submission.",
+    goals: record.goals || "Цели будут заполнены после отправки анкеты.",
+    experience: record.experience || "Опыт будет указан после отправки анкеты.",
     motivation_text: record.motivationText || "",
     essay_excerpt: record.changeAgentVision || "",
     artifacts: [],

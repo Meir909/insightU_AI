@@ -337,13 +337,25 @@ export interface ComprehensiveEvaluation {
 }
 
 // ============================================================================
+// RUBRIC EVALUATION RESULT INTERFACE
+// ============================================================================
+
+interface RubricEvaluationResult {
+  rubricScores: ComprehensiveEvaluation['rubricScores'];
+  overallScore: number;
+  strengths: ComprehensiveEvaluation['strengths'];
+  developmentAreas: ComprehensiveEvaluation['developmentAreas'];
+  redFlags: ComprehensiveEvaluation['redFlags'];
+}
+
+// ============================================================================
 // COMPREHENSIVE EVALUATION SERVICE
 // ============================================================================
 
 export interface EvaluationRequest {
   candidateId: string;
   candidateProfile: {
-    applicationData: any;
+    applicationData: Record<string, unknown>;
     resumeText?: string;
     interviewResponses: Array<{
       question: string;
@@ -351,8 +363,8 @@ export interface EvaluationRequest {
       type: "behavioral" | "technical" | "motivational" | "situational";
       timestamp?: string;
     }>;
-    videoAnalysis?: any;
-    voiceAnalysis?: any;
+    videoAnalysis?: Record<string, unknown>;
+    voiceAnalysis?: Record<string, unknown>;
   };
   cohortData?: Array<{
     candidateId: string;
@@ -392,8 +404,7 @@ export async function evaluateComprehensive(
   const recommendation = compileRecommendation(
     baseEvaluation,
     inVisionUFit,
-    consistencyAnalysis,
-    comparativeAnalysis
+    consistencyAnalysis
   );
   
   // 8. Build comprehensive result
@@ -425,10 +436,10 @@ export async function evaluateComprehensive(
     explainability: {
       summary: generateSummary(baseEvaluation, recommendation),
       methodology: "Multi-dimensional rubric-based evaluation with 5 dimensions, consistency analysis, and comparative benchmarking",
-      keyEvidence: baseEvaluation.rubricScores.flatMap((r: any) => r.evidence).slice(0, 10),
+      keyEvidence: baseEvaluation.rubricScores.flatMap((r) => r.evidence).slice(0, 10),
       uncertaintyAreas: baseEvaluation.rubricScores
-        .filter((r: any) => r.confidence < 70)
-        .map((r: any) => `${r.dimension} (confidence: ${r.confidence}%)`),
+        .filter((r) => r.confidence < 70)
+        .map((r) => `${r.dimension} (confidence: ${r.confidence}%)`),
     },
   };
   
@@ -466,7 +477,7 @@ function formatCandidateData(profile: EvaluationRequest["candidateProfile"]): st
   return parts.join("\n");
 }
 
-async function runRubricEvaluation(formattedData: string): Promise<any> {
+async function runRubricEvaluation(formattedData: string): Promise<RubricEvaluationResult> {
   const prompt = `
 Evaluate this inVision U candidate using the structured rubrics below. Provide specific evidence for each score.
 
@@ -529,15 +540,13 @@ Provide evaluation in JSON format:
     temperature: 0.2,
   });
 
-  return JSON.parse(response.choices[0].message.content || "{}");
+  return JSON.parse(response.choices[0].message.content || "{}") as RubricEvaluationResult;
 }
 
-function analyzeConsistency(responses: EvaluationRequest["candidateProfile"]["interviewResponses"]): ComprehensiveEvaluation["consistency"] {
+function analyzeConsistency(_responses: EvaluationRequest["candidateProfile"]["interviewResponses"]): ComprehensiveEvaluation["consistency"] {
   const inconsistencies: ComprehensiveEvaluation["consistency"]["inconsistencies"] = [];
   
-  // Check for value-action misalignment
-  const motivationalResponses = responses.filter(r => r.type === "motivational");
-  const behavioralResponses = responses.filter(r => r.type === "behavioral");
+  // Check for value-action misalignment — response type filtering available for future embedding similarity analysis
   
   // Simplified consistency check - in production, use embedding similarity
   const valueActionAlignment = 75; // Placeholder
@@ -558,7 +567,7 @@ function analyzeConsistency(responses: EvaluationRequest["candidateProfile"]["in
 }
 
 function runComparativeAnalysis(
-  baseEvaluation: any, 
+  baseEvaluation: RubricEvaluationResult,
   cohortData: EvaluationRequest["cohortData"]
 ): {
   percentile: number;
@@ -569,7 +578,7 @@ function runComparativeAnalysis(
     return { percentile: 50, strongerAreas: [], weakerAreas: [] };
   }
 
-  const scores = cohortData.map((c: any) => c.overallScore);
+  const scores = cohortData.map((c) => c.overallScore);
   scores.push(baseEvaluation.overallScore);
   scores.sort((a: number, b: number) => a - b);
 
@@ -580,8 +589,8 @@ function runComparativeAnalysis(
   const strongerAreas: string[] = [];
   const weakerAreas: string[] = [];
 
-  baseEvaluation.rubricScores.forEach((score: any) => {
-    const cohortAvg = cohortData.reduce((sum: number, c: any) => sum + (c.dimensionScores[score.dimension] || 50), 0) / cohortData.length;
+  baseEvaluation.rubricScores.forEach((score) => {
+    const cohortAvg = cohortData.reduce((sum: number, c) => sum + (c.dimensionScores[score.dimension] || 50), 0) / cohortData.length;
 
     if (score.score > cohortAvg * 1.1) {
       strongerAreas.push(score.dimension);
@@ -593,7 +602,7 @@ function runComparativeAnalysis(
   return { percentile, strongerAreas, weakerAreas };
 }
 
-function calculateInVisionUFit(baseEvaluation: any): ComprehensiveEvaluation["inVisionUFit"] {
+function calculateInVisionUFit(baseEvaluation: RubricEvaluationResult): ComprehensiveEvaluation["inVisionUFit"] {
   const dimensions = {
     alignmentWithMission: 0,
     changeAgentPotential: 0,
@@ -602,7 +611,7 @@ function calculateInVisionUFit(baseEvaluation: any): ComprehensiveEvaluation["in
   };
   
   // Map rubric scores to inVision U dimensions
-  baseEvaluation.rubricScores.forEach((score: any) => {
+  baseEvaluation.rubricScores.forEach((score) => {
     switch (score.dimension) {
       case "change_agent_mindset":
         dimensions.changeAgentPotential = score.level * 20;
@@ -636,11 +645,11 @@ function calculateInVisionUFit(baseEvaluation: any): ComprehensiveEvaluation["in
     overall,
     dimensions,
     verdict,
-    reasoning: baseEvaluation.strengths.map((s: any) => s.description),
+    reasoning: baseEvaluation.strengths.map((s) => s.description),
   };
 }
 
-function generatePotentialForecast(baseEvaluation: any): ComprehensiveEvaluation["potentialForecast"] {
+function generatePotentialForecast(baseEvaluation: RubricEvaluationResult): ComprehensiveEvaluation["potentialForecast"] {
   const overallScore = baseEvaluation.overallScore;
   
   return {
@@ -658,19 +667,18 @@ function generatePotentialForecast(baseEvaluation: any): ComprehensiveEvaluation
         overallScore > 75 ? "Could represent inVision at external events" : "Growing internal reputation",
       ],
     },
-    keyFactors: baseEvaluation.strengths.map((s: any) => s.title),
+    keyFactors: baseEvaluation.strengths.map((s) => s.title),
   };
 }
 
 function compileRecommendation(
-  baseEvaluation: any,
+  baseEvaluation: RubricEvaluationResult,
   inVisionUFit: ComprehensiveEvaluation["inVisionUFit"],
-  consistency: ComprehensiveEvaluation["consistency"],
-  comparative: any
+  consistency: ComprehensiveEvaluation["consistency"]
 ): ComprehensiveEvaluation["recommendation"] {
   const overall = baseEvaluation.overallScore;
-  const hasCriticalRedFlags = baseEvaluation.redFlags?.some((f: any) => f.severity === "critical");
-  const hasHighRedFlags = baseEvaluation.redFlags?.some((f: any) => f.severity === "high");
+  const hasCriticalRedFlags = baseEvaluation.redFlags?.some((f) => f.severity === "critical");
+  const hasHighRedFlags = baseEvaluation.redFlags?.some((f) => f.severity === "high");
   
   let verdict: ComprehensiveEvaluation["recommendation"]["verdict"];
   let priority = 5;
@@ -708,7 +716,7 @@ function compileRecommendation(
   };
 }
 
-function generateSummary(baseEvaluation: any, recommendation: ComprehensiveEvaluation["recommendation"]): string {
+function generateSummary(baseEvaluation: RubricEvaluationResult, recommendation: ComprehensiveEvaluation["recommendation"]): string {
   const verdictMap: Record<string, string> = {
     strong_accept: "Exceptional candidate - immediate acceptance recommended",
     accept: "Strong candidate - accept",

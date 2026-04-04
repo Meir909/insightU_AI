@@ -216,7 +216,7 @@ export async function analyzeAudio(
     });
 
     const transcript = transcription.text;
-    const words = (transcription as any).words || [];
+    const words = (transcription as { words?: { start: number; end: number; word: string }[] }).words || [];
     const duration = words.length > 0 
       ? words[words.length - 1].end 
       : transcript.split(" ").length * 0.5; // estimate
@@ -303,7 +303,6 @@ Provide analysis in JSON format:
 export async function analyzeVoiceMessage(
   audioBuffer: Buffer,
   mimeType: string,
-  context?: string
 ): Promise<{
   transcript: string;
   sentiment: "positive" | "neutral" | "negative";
@@ -325,7 +324,7 @@ export async function analyzeVoiceMessage(
 /**
  * Detect stress and confidence from voice patterns
  */
-export function detectVoicePatterns(transcript: string, words: any[]): {
+export function detectVoicePatterns(transcript: string, words: { start: number; end: number; word: string }[]): {
   hesitationCount: number;
   speedVariation: number;
   confidenceIndicators: string[];

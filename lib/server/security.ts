@@ -26,7 +26,7 @@ const DEFAULT_RATE_LIMIT: RateLimitConfig = {
   maxRequests: 30, // 30 requests per minute
 };
 
-const STRICT_RATE_LIMIT: RateLimitConfig = {
+export const STRICT_RATE_LIMIT: RateLimitConfig = {
   windowMs: 60 * 1000,
   maxRequests: 5, // 5 requests per minute for sensitive endpoints
 };
@@ -245,24 +245,24 @@ export function redactPIIFromUnknown<T>(value: T): T {
   return value;
 }
 
-export function sanitizeObject(obj: Record<string, any>): Record<string, any> {
+export function sanitizeObject(obj: Record<string, unknown>): Record<string, unknown> {
   if (Array.isArray(obj)) {
     return obj.map((value) =>
       typeof value === "string"
         ? sanitizeString(value)
         : typeof value === "object" && value !== null
-          ? sanitizeObject(value)
+          ? sanitizeObject(value as Record<string, unknown>)
           : value,
-    ) as unknown as Record<string, any>;
+    ) as unknown as Record<string, unknown>;
   }
 
-  const sanitized: Record<string, any> = {};
+  const sanitized: Record<string, unknown> = {};
   
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'string') {
       sanitized[key] = sanitizeString(value);
     } else if (typeof value === 'object' && value !== null) {
-      sanitized[key] = sanitizeObject(value);
+      sanitized[key] = sanitizeObject(value as Record<string, unknown>);
     } else {
       sanitized[key] = value;
     }
@@ -322,7 +322,7 @@ export function forbiddenResponse(message = 'Forbidden'): NextResponse {
   );
 }
 
-export function badRequestResponse(message: string, details?: any): NextResponse {
+export function badRequestResponse(message: string, details?: unknown): NextResponse {
   return NextResponse.json(
     { error: 'Bad Request', message, details },
     { status: 400, headers: securityHeaders }

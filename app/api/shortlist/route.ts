@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     });
 
     const response = NextResponse.json({
-      shortlisted: candidates.map((c: any) => ({
+      shortlisted: candidates.map((c) => ({
         id: c.id,
         code: c.code,
         name: c.fullName,

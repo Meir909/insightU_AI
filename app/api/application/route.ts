@@ -215,8 +215,7 @@ export async function GET(request: NextRequest) {
 
 function calculateCompleteness(app: z.infer<typeof applicationSchema>): number {
   let score = 0;
-  let max = 100;
-  
+
   // Personal info (20 points)
   score += 20;
   

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         completed: stats.byStatus?.completed || 0,
         average_score: Math.round((stats.averageScore || 0) * 10) / 10,
       },
-      candidates: candidates.map((c: any) => ({
+      candidates: candidates.map((c) => ({
         id: c.id,
         code: c.code,
         name: c.fullName,

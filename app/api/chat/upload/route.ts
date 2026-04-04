@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { getAuthSession } from "@/lib/server/auth";
 import { addSecurityHeaders } from "@/lib/server/security";
 import { analyzeAudio, analyzeVideo } from "@/lib/services/media-analysis";
@@ -62,6 +63,8 @@ export async function POST(request: NextRequest) {
               summary: "Document uploaded and attached to the candidate interview session.",
             };
 
+    const analysisPayload = JSON.parse(JSON.stringify(analysis)) as Prisma.InputJsonValue;
+
     const artifact = await createArtifact({
       candidateId: candidate.id,
       type: kind,
@@ -69,7 +72,7 @@ export async function POST(request: NextRequest) {
       url: upload.url,
       size: file.size,
       mimeType,
-      analysis,
+      analysis: analysisPayload,
     });
 
     await createAuditLog({
@@ -89,12 +92,20 @@ export async function POST(request: NextRequest) {
     });
 
     const transcript =
-      analysis && typeof analysis === "object" && "transcript" in analysis && typeof analysis.transcript === "string"
-        ? analysis.transcript
+      typeof analysisPayload === "object" &&
+      analysisPayload !== null &&
+      !Array.isArray(analysisPayload) &&
+      "transcript" in analysisPayload &&
+      typeof analysisPayload.transcript === "string"
+        ? analysisPayload.transcript
         : undefined;
     const extractedSignals =
-      analysis && typeof analysis === "object" && "keyPoints" in analysis && Array.isArray(analysis.keyPoints)
-        ? analysis.keyPoints.filter((item): item is string => typeof item === "string")
+      typeof analysisPayload === "object" &&
+      analysisPayload !== null &&
+      !Array.isArray(analysisPayload) &&
+      "keyPoints" in analysisPayload &&
+      Array.isArray(analysisPayload.keyPoints)
+        ? analysisPayload.keyPoints.filter((item): item is string => typeof item === "string")
         : [];
 
     return addSecurityHeaders(

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { getAuthSession } from "@/lib/server/auth";
 import { addSecurityHeaders } from "@/lib/server/security";
@@ -61,10 +62,18 @@ export async function POST(request: NextRequest) {
       resumeText: candidate.resume?.extractedText || undefined,
       interviewResponses: buildInterviewResponses(candidate),
       videoAnalysis: params.includeMediaAnalysis
-        ? candidate.artifacts.filter((artifact) => artifact.type === "video").map((artifact) => artifact.analysis)
+        ? {
+            artifacts: candidate.artifacts
+              .filter((artifact) => artifact.type === "video")
+              .map((artifact) => artifact.analysis),
+          }
         : undefined,
       voiceAnalysis: params.includeMediaAnalysis
-        ? candidate.artifacts.filter((artifact) => artifact.type === "audio").map((artifact) => artifact.analysis)
+        ? {
+            artifacts: candidate.artifacts
+              .filter((artifact) => artifact.type === "audio")
+              .map((artifact) => artifact.analysis),
+          }
         : undefined,
     };
 
@@ -115,6 +124,13 @@ export async function POST(request: NextRequest) {
     });
 
     await updateCandidate(params.candidateId, { overallScore: evaluation.overallScore });
+    const auditDetails = JSON.parse(
+      JSON.stringify({
+        candidateId: params.candidateId,
+        evaluation,
+      }),
+    ) as Prisma.InputJsonValue;
+
     await createAuditLog({
       action: "COMPREHENSIVE_EVALUATION_COMPLETED",
       entityType: "candidate_evaluation",
@@ -124,10 +140,7 @@ export async function POST(request: NextRequest) {
       actorName: session.name,
       ipAddress: request.headers.get("x-forwarded-for")?.split(",")[0] || undefined,
       userAgent: request.headers.get("user-agent") || undefined,
-      details: {
-        candidateId: params.candidateId,
-        evaluation,
-      },
+      details: auditDetails,
     });
 
     return addSecurityHeaders(

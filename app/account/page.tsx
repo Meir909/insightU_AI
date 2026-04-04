@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, LogOut, Pencil, Shield, Sparkles, User, BarChart3, Hash, FileText, CheckCircle2, Clock, Users } from "lucide-react";
+import { ArrowRight, LogOut, Pencil, Shield, Sparkles, User, BarChart3, Hash, FileText, CheckCircle2, Users, Info, Lock } from "lucide-react";
 import { getCandidateAccountOverview } from "@/lib/server/account-store";
 import {
   AUTH_EMAIL_COOKIE,
@@ -298,6 +298,29 @@ export default async function CandidateAccountPage() {
           </div>
         </div>
 
+        {/* What happens next — shown after interview is done */}
+        {isCompleted && (
+          <div className="panel-soft p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <Info className="h-4 w-4 text-brand-green" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-text-muted">Что происходит дальше</p>
+            </div>
+            <div className="space-y-3">
+              {[
+                { step: "1", text: "AI завершил первичный анализ ваших ответов по 6 измерениям" },
+                { step: "2", text: "Комиссия inVision U независимо изучит ваш профиль и вынесет решение" },
+                { step: "3", text: "Итоговое решение принимается коллегиально — минимум 3 голоса" },
+                { step: "4", text: "Статус заявки обновится в этом кабинете. Ожидаемый срок: 5–7 рабочих дней" },
+              ].map((item) => (
+                <div key={item.step} className="flex items-start gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-green/15 text-[10px] font-black text-brand-green">{item.step}</span>
+                  <p className="text-sm leading-relaxed text-text-secondary">{item.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Profile Summary */}
         {(overview.candidate.goals || overview.candidate.experience) && (
           <div className="panel-soft p-6">
@@ -318,6 +341,41 @@ export default async function CandidateAccountPage() {
             </div>
           </div>
         )}
+
+        {/* Human-in-the-loop notice */}
+        <div className="rounded-2xl border border-white/8 bg-bg-surface p-5">
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-green/10">
+              <Users className="h-4 w-4 text-brand-green" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">Решение принимают люди, не AI</p>
+              <p className="mt-1 text-sm leading-relaxed text-text-secondary">
+                Система AI анализирует и ранжирует кандидатов, но никогда не принимает финальных решений самостоятельно.
+                Каждый кандидат рассматривается живой комиссией inVision U. AI — это инструмент поддержки, а не замена человеческого суждения.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Privacy & consent summary */}
+        <div className="rounded-2xl border border-white/8 bg-bg-surface p-5">
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/5">
+              <Lock className="h-4 w-4 text-text-muted" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">Конфиденциальность и данные</p>
+              <p className="mt-1 text-sm leading-relaxed text-text-secondary">
+                Ваши данные обрабатываются согласно{" "}
+                <Link href="/privacy-policy" className="text-brand-green hover:underline">политике конфиденциальности</Link>.
+                Мы не передаём данные третьим лицам и не используем демографические признаки в алгоритме оценки.
+                Для запроса на удаление данных — обратитесь в поддержку, указав код кандидата{" "}
+                <span className="font-mono text-brand-green">{overview.candidate.code}</span>.
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Footer note */}
         <p className="flex items-center justify-center gap-1.5 text-center text-xs text-text-muted">

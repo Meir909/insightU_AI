@@ -3,6 +3,7 @@
  * Production-ready logging with structured output
  */
 
+import type { Prisma } from "@prisma/client";
 import { prisma } from './prisma';
 
 // ============================================================================
@@ -30,7 +31,7 @@ interface LogEntry {
   level: LogLevel;
   message: string;
   service: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   error?: {
     message: string;
     stack?: string;
@@ -56,7 +57,7 @@ class Logger {
     return LOG_LEVELS[level] >= LOG_LEVELS[CURRENT_LOG_LEVEL];
   }
 
-  private formatEntry(level: LogLevel, message: string, meta?: any): LogEntry {
+  private formatEntry(level: LogLevel, message: string, meta?: Partial<LogEntry>): LogEntry {
     return {
       timestamp: new Date().toISOString(),
       level,
@@ -92,44 +93,44 @@ class Logger {
     }
   }
 
-  debug(message: string, context?: Record<string, any>): void {
+  debug(message: string, context?: Record<string, unknown>): void {
     if (!this.shouldLog('debug')) return;
     const entry = this.formatEntry('debug', message, { context });
     this.output(entry);
   }
 
-  info(message: string, context?: Record<string, any>): void {
+  info(message: string, context?: Record<string, unknown>): void {
     if (!this.shouldLog('info')) return;
     const entry = this.formatEntry('info', message, { context });
     this.output(entry);
   }
 
-  warn(message: string, context?: Record<string, any>): void {
+  warn(message: string, context?: Record<string, unknown>): void {
     if (!this.shouldLog('warn')) return;
     const entry = this.formatEntry('warn', message, { context });
     this.output(entry);
   }
 
-  error(message: string, error?: Error, context?: Record<string, any>): void {
+  error(message: string, error?: Error, context?: Record<string, unknown>): void {
     if (!this.shouldLog('error')) return;
     const entry = this.formatEntry('error', message, {
       context,
       error: error ? {
         message: error.message,
         stack: error.stack,
-        code: (error as any).code,
+        code: (error as NodeJS.ErrnoException).code,
       } : undefined,
     });
     this.output(entry);
   }
 
-  fatal(message: string, error?: Error, context?: Record<string, any>): void {
+  fatal(message: string, error?: Error, context?: Record<string, unknown>): void {
     const entry = this.formatEntry('fatal', message, {
       context,
       error: error ? {
         message: error.message,
         stack: error.stack,
-        code: (error as any).code,
+        code: (error as NodeJS.ErrnoException).code,
       } : undefined,
     });
     this.output(entry);
@@ -143,7 +144,7 @@ class Logger {
     const startTime = Date.now();
     
     return {
-      finish: (message: string, meta?: any) => {
+      finish: (message: string, meta?: Record<string, unknown>) => {
         const duration = Date.now() - startTime;
         this.info(message, {
           ...meta,
@@ -167,6 +168,12 @@ class Logger {
     try {
       // Only persist error and fatal logs to database
       if (entry.level !== 'error' && entry.level !== 'fatal') return;
+      const details = JSON.parse(JSON.stringify({
+        level: entry.level,
+        message: entry.message,
+        error: entry.error,
+        context: entry.context,
+      })) as Prisma.InputJsonValue;
       
       // Use audit log table for persistent error logging
       await prisma.auditLog.create({
@@ -176,12 +183,7 @@ class Logger {
           entityId: entry.service,
           actorType: 'system',
           actorName: entry.service,
-          details: {
-            level: entry.level,
-            message: entry.message,
-            error: entry.error,
-            context: entry.context,
-          },
+          details,
         },
       });
     } catch (err) {
@@ -192,7 +194,7 @@ class Logger {
 }
 
 interface RequestTracker {
-  finish: (message: string, meta?: any) => void;
+  finish: (message: string, meta?: Record<string, unknown>) => void;
   error: (message: string, error?: Error) => void;
 }
 
@@ -246,7 +248,7 @@ export function logError(
   service: keyof typeof logger,
   operation: string,
   error: unknown,
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ): void {
   const err = error instanceof Error ? error : new Error(String(error));
   logger[service].error(`${operation} failed`, err, context);
@@ -255,7 +257,7 @@ export function logError(
 export function logWarning(
   service: keyof typeof logger,
   message: string,
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ): void {
   logger[service].warn(message, context);
 }

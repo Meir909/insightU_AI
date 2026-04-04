@@ -5,6 +5,7 @@
  * Safe to call multiple times — skips existing accounts by phone.
  */
 import { NextRequest, NextResponse } from "next/server";
+import type { CandidateStatus } from "@prisma/client";
 import { hashPassword } from "@/lib/server/password";
 import {
   createCandidateAccountWithSession,
@@ -174,6 +175,8 @@ export async function POST(request: NextRequest) {
       const candidateId = result.candidate.id;
       const interviewSession = await getInterviewSessionByCandidateId(candidateId);
       const sessionId = interviewSession?.id;
+      const normalizedStatus: CandidateStatus =
+        c.status === "pending" ? "completed" : (c.status as CandidateStatus);
 
       // Update candidate profile fields
       await updateCandidate(candidateId, {
@@ -181,7 +184,7 @@ export async function POST(request: NextRequest) {
         institution: c.institution,
         goals: c.goals,
         experience: c.experience,
-        status: c.status,
+        status: normalizedStatus,
         overallScore: c.overallScore || undefined,
       });
 

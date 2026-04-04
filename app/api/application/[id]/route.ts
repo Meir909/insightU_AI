@@ -166,9 +166,13 @@ export async function POST(
   }
 }
 
-function getNextSteps(candidate: any): string[] {
+function getNextSteps(candidate: {
+  applicationCompleted?: unknown;
+  resumeUrl?: unknown;
+  committeeReview?: { recommendation?: string | null } | null;
+}): string[] {
   const steps: string[] = [];
-  
+
   if (!candidate.applicationCompleted) {
     steps.push("Complete application form");
   } else if (!candidate.resumeUrl) {
@@ -180,6 +184,6 @@ function getNextSteps(candidate: any): string[] {
   } else if (candidate.committeeReview.recommendation === "hold") {
     steps.push("Additional information may be requested");
   }
-  
+
   return steps;
 }

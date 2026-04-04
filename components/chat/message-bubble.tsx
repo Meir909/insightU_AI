@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Pause, Play, Video, Waves } from "lucide-react";
+import { FileText, Pause, Play, Video } from "lucide-react";
 import { useRef, useState } from "react";
 import type { ChatAttachment, ChatMessage } from "@/lib/types";
 
@@ -9,6 +9,7 @@ function AudioPlayer({ attachment, dark }: { attachment: ChatAttachment; dark?: 
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
 
   const toggle = () => {
     const el = audioRef.current;
@@ -25,6 +26,7 @@ function AudioPlayer({ attachment, dark }: { attachment: ChatAttachment; dark?: 
     const el = audioRef.current;
     if (!el || !el.duration) return;
     setProgress((el.currentTime / el.duration) * 100);
+    setCurrentTime(el.currentTime);
   };
 
   const onLoadedMetadata = () => {
@@ -105,7 +107,7 @@ function AudioPlayer({ attachment, dark }: { attachment: ChatAttachment; dark?: 
 
         {duration > 0 && (
           <span className={`shrink-0 font-mono text-[10px] ${dark ? "text-black/50" : "text-text-muted"}`}>
-            {fmt(audioRef.current?.currentTime ?? 0)}/{fmt(duration)}
+            {fmt(currentTime)}/{fmt(duration)}
           </span>
         )}
       </div>

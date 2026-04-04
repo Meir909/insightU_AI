@@ -462,7 +462,7 @@ export async function evaluateWithFineTunedModel(
     const result = JSON.parse(content) as FineTunedEvaluationResult;
     
     // Add confidence based on logprobs if available
-    result.confidence = calculateConfidence(response);
+    result.confidence = calculateConfidence();
     
     return result;
   } catch (error) {
@@ -471,7 +471,7 @@ export async function evaluateWithFineTunedModel(
   }
 }
 
-function calculateConfidence(response: any): number {
+function calculateConfidence(): number {
   // Simplified confidence calculation
   // In production, analyze logprobs from response
   return 0.85; // Placeholder

@@ -103,7 +103,7 @@ const STEPS = [
   { num: 4, label: "Подтверждение", icon: ClipboardCheck },
 ];
 
-export function ApplicationForm({ prefillName }: { prefillName?: string }) {
+export function ApplicationForm({ prefillName, prefillEmail, prefillPhone }: { prefillName?: string; prefillEmail?: string; prefillPhone?: string }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
@@ -190,6 +190,10 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
   }
 
   async function handleSubmit() {
+    if (!prefillEmail && !prefillPhone) {
+      setError("Не удалось определить контактные данные сессии. Выйдите и войдите снова.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -198,8 +202,8 @@ export function ApplicationForm({ prefillName }: { prefillName?: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName: form.fullName,
-          email: `candidate_${Date.now()}@invisionu.kz`,
-          phone: "+70000000000",
+          email: prefillEmail,
+          phone: prefillPhone,
           dateOfBirth: form.dateOfBirth,
           city: form.city,
           educationLevel: form.educationLevel,

@@ -74,11 +74,13 @@ export function LoginEntry() {
         body: JSON.stringify({ role, identifier: identifier.trim() }),
       });
       const data = await response.json();
-      if (response.ok) {
+      if (response.ok && data.deleted) {
         setResetDone(true);
         setFailedAttempts(0);
         setPassword("");
         toast.success("Аккаунт удалён. Теперь вы можете зарегистрироваться заново.");
+      } else if (response.ok && !data.deleted) {
+        setInlineError("Аккаунт с таким телефоном или email не найден. Проверьте правильность введённых данных.");
       } else {
         setInlineError(data.error || "Не удалось сбросить аккаунт");
       }
