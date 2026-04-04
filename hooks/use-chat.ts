@@ -19,7 +19,7 @@ export function useChat() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
-  const [progress, setProgress] = useState(12);
+  const [progress, setProgress] = useState(5);
   const [status, setStatus] = useState<"active" | "completed">("active");
   const [paused, setPaused] = useState(false);
   const [scoreUpdate, setScoreUpdate] = useState<InterviewScoreUpdate | null>(null);
@@ -35,7 +35,7 @@ export function useChat() {
           window.sessionStorage.setItem("insightu-chat-session", data.session_id as string);
         }
         setMessages(data.messages ?? []);
-        setProgress(data.progress ?? 12);
+        setProgress(data.progress ?? 5);
         setStatus(data.status ?? "active");
         setScoreUpdate(data.score_update ?? null);
         setPhase(data.phase ?? "Foundation");
@@ -46,8 +46,27 @@ export function useChat() {
     if (!files?.length) return;
     setUploading(true);
 
+    // Add optimistic placeholders immediately so user sees chips right away
+    const fileArray = Array.from(files);
+    const placeholders: ChatAttachment[] = fileArray.map((file) => ({
+      id: `uploading-${crypto.randomUUID()}`,
+      kind: file.type.startsWith("audio/")
+        ? "audio"
+        : file.type.startsWith("video/")
+          ? "video"
+          : "document",
+      name: file.name,
+      mimeType: file.type,
+      sizeKb: Math.max(1, Math.round(file.size / 1024)),
+      status: "uploading" as const,
+    }));
+    setAttachments((current) => [...current, ...placeholders]);
+
     const uploaded: ChatAttachment[] = [];
-    for (const file of Array.from(files)) {
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i];
+      const placeholderId = placeholders[i].id;
+
       const formData = new FormData();
       formData.set("file", file);
 
@@ -58,11 +77,18 @@ export function useChat() {
 
       const data = await response.json();
       if (response.ok && data.attachment) {
-        uploaded.push(data.attachment as ChatAttachment);
+        const ready = data.attachment as ChatAttachment;
+        // Replace placeholder with real attachment
+        setAttachments((current) =>
+          current.map((a) => (a.id === placeholderId ? ready : a)),
+        );
+        uploaded.push(ready);
+      } else {
+        // Remove failed placeholder
+        setAttachments((current) => current.filter((a) => a.id !== placeholderId));
       }
     }
 
-    setAttachments((current) => [...current, ...uploaded]);
     setUploading(false);
   };
 

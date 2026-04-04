@@ -101,7 +101,7 @@ export interface ChatAttachment {
   name: string;
   mimeType: string;
   sizeKb: number;
-  status: "uploaded" | "processing" | "ready";
+  status: "uploading" | "uploaded" | "processing" | "ready";
   transcript?: string;
   extractedSignals?: string[];
   storagePath?: string;

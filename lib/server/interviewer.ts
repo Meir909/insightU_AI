@@ -72,6 +72,17 @@ Ask the next question only. No preamble.`;
   return data.choices?.[0]?.message?.content?.trim() || null;
 }
 
+// Smooth progress milestones — weighted so initial questions feel faster,
+// then slows toward the end (creating a natural sense of deepening engagement).
+// count = number of user messages sent so far (AFTER this answer is appended).
+const PROGRESS_MILESTONES = [8, 18, 30, 44, 58, 73, 88, 100];
+
+function calcProgress(answeredCount: number): number {
+  // answeredCount: how many answers the user has given (1-based when called after appending)
+  const idx = Math.min(answeredCount, PROGRESS_MILESTONES.length - 1);
+  return PROGRESS_MILESTONES[idx];
+}
+
 export async function getAssistantReply(history: ChatMessage[], profile?: CandidateProfile) {
   const userMessages = history.filter((message) => message.role === "user");
   const count = userMessages.length;
@@ -84,14 +95,14 @@ export async function getAssistantReply(history: ChatMessage[], profile?: Candid
       if (adaptive) {
         return {
           reply: adaptive,
-          progress: Math.round(((count + 1) / 7) * 100),
+          progress: calcProgress(count),
           completed: false,
         };
       }
     }
     return {
       reply: BASE_QUESTIONS[count],
-      progress: Math.round(((count + 1) / 7) * 100),
+      progress: calcProgress(count),
       completed: false,
     };
   }
@@ -105,7 +116,7 @@ export async function getAssistantReply(history: ChatMessage[], profile?: Candid
     const adaptive = (await askOpenAI(history, profile)) || fallbacks[count - 5];
     return {
       reply: adaptive,
-      progress: Math.round(((count + 1) / 7) * 100),
+      progress: calcProgress(count),
       completed: false,
     };
   }

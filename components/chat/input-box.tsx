@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUp, ImageIcon, LoaderCircle, Mic, Paperclip, StopCircle, Video, Waves } from "lucide-react";
+import { ArrowUp, CheckCircle2, ImageIcon, LoaderCircle, Mic, Paperclip, StopCircle, Video, Waves } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ChatAttachment } from "@/lib/types";
 
@@ -120,27 +120,47 @@ export function InputBox({
       {/* Attachments */}
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2 border-b border-white/6 px-4 py-3">
-          {attachments.map((attachment) => (
-            <button
-              key={attachment.id}
-              type="button"
-              onClick={() => onRemoveAttachment(attachment.id)}
-              className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary transition-colors hover:border-red-500/30 hover:text-red-400"
-              title="Удалить"
-            >
-              {attachment.kind === "audio" ? (
-                <Waves className="h-3.5 w-3.5" />
-              ) : attachment.kind === "video" ? (
-                <Video className="h-3.5 w-3.5" />
-              ) : attachment.mimeType?.startsWith("image/") ? (
-                <ImageIcon className="h-3.5 w-3.5" />
-              ) : (
-                <Paperclip className="h-3.5 w-3.5" />
-              )}
-              {attachment.name}
-              <span className="text-[10px] opacity-50">✕</span>
-            </button>
-          ))}
+          {attachments.map((attachment) => {
+            const isUploading = attachment.status === "uploading";
+            return (
+              <button
+                key={attachment.id}
+                type="button"
+                onClick={() => !isUploading && onRemoveAttachment(attachment.id)}
+                disabled={isUploading}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-all ${
+                  isUploading
+                    ? "border-brand-green/30 bg-brand-green/8 text-brand-green cursor-default"
+                    : "border-white/8 bg-bg-elevated text-text-secondary hover:border-red-500/30 hover:text-red-400 cursor-pointer"
+                }`}
+                title={isUploading ? "Загрузка…" : "Нажмите чтобы удалить"}
+              >
+                {isUploading ? (
+                  <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                ) : attachment.kind === "audio" ? (
+                  <Waves className="h-3.5 w-3.5" />
+                ) : attachment.kind === "video" ? (
+                  <Video className="h-3.5 w-3.5" />
+                ) : attachment.mimeType?.startsWith("image/") ? (
+                  <ImageIcon className="h-3.5 w-3.5" />
+                ) : (
+                  <Paperclip className="h-3.5 w-3.5" />
+                )}
+                <span className="max-w-[120px] truncate">{attachment.name}</span>
+                {isUploading ? (
+                  <span className="text-[10px] opacity-70">загрузка…</span>
+                ) : (
+                  <>
+                    {attachment.sizeKb && (
+                      <span className="text-[10px] opacity-40">{attachment.sizeKb}кб</span>
+                    )}
+                    <CheckCircle2 className="h-3 w-3 text-brand-green/60 shrink-0" />
+                    <span className="text-[10px] opacity-40 hover:opacity-100">✕</span>
+                  </>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
 
