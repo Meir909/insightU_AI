@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import type { Prisma } from "@prisma/client";
-import type { ChatAttachment, ChatMessage } from "@/lib/types";
+import type { ChatAttachment, ChatMessage, InterviewScoreUpdate } from "@/lib/types";
 import { getAssistantReply, getInterviewMeta } from "@/lib/server/interviewer";
 import { scoreInterview } from "@/lib/server/interview-scoring";
 import { detectAIContent } from "@/lib/services/ai-detector";
@@ -26,7 +26,7 @@ type SessionState = {
   messages: ChatMessage[];
   progress: number;
   status: "active" | "completed";
-  scoreUpdate: ReturnType<typeof scoreInterview> | null;
+  scoreUpdate: InterviewScoreUpdate | null;
   phase: string;
   artifacts: ChatAttachment[];
 };
@@ -128,7 +128,7 @@ export async function getOrCreateSession(_requestedSessionId: string, userId: st
     messages,
     progress: persisted.progress,
     status: persisted.status === "completed" ? "completed" : "active",
-    scoreUpdate: persisted.messages.findLast((item) => item.scoreUpdate)?.scoreUpdate as ReturnType<typeof scoreInterview> | null,
+    scoreUpdate: persisted.messages.findLast((item) => item.scoreUpdate)?.scoreUpdate as InterviewScoreUpdate | null,
     phase: persisted.phase,
     artifacts: await loadArtifacts(candidate.id),
   } satisfies SessionState;
@@ -154,7 +154,7 @@ export async function appendUserMessage(
 
   const userMessages = [...session.messages.filter((message) => message.role === "user").map((message) => message.content), contentWithArtifacts];
   const allArtifacts = [...session.artifacts, ...attachments];
-  const scoreUpdate = scoreInterview(userMessages, allArtifacts);
+  const scoreUpdate = await scoreInterview(userMessages, allArtifacts);
   const scoreUpdatePayload = JSON.parse(JSON.stringify(scoreUpdate)) as Prisma.InputJsonValue;
 
   const assistant = await getAssistantReply(

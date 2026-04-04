@@ -1,7 +1,10 @@
 "use client";
 
-import { ArrowUp, ImageIcon, LoaderCircle, Paperclip, Video, Waves } from "lucide-react";
+import { ArrowUp, ImageIcon, LoaderCircle, Mic, Paperclip, StopCircle, Video, Waves } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import type { ChatAttachment } from "@/lib/types";
+
+const MAX_RECORDING_SECONDS = 180;
 
 type InputBoxProps = {
   value: string;
@@ -26,6 +29,92 @@ export function InputBox({
   uploading,
   disabled,
 }: InputBoxProps) {
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  const startRecording = async () => {
+    if (disabled || loading || uploading) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      chunksRef.current = [];
+
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+      const recorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+
+        const blob = new Blob(chunksRef.current, { type: mimeType });
+        const ext = mimeType.includes("webm") ? "webm" : "mp4";
+        const file = new File([blob], `voice-memo-${Date.now()}.${ext}`, { type: mimeType });
+
+        // Create a synthetic FileList via DataTransfer
+        try {
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          onFilesSelected(dt.files);
+        } catch {
+          // DataTransfer not supported in some environments — pass single-file array workaround
+          const pseudoList = { 0: file, length: 1, item: (i: number) => (i === 0 ? file : null), [Symbol.iterator]: function* () { yield file; } } as unknown as FileList;
+          onFilesSelected(pseudoList);
+        }
+      };
+
+      recorder.start(250); // collect chunks every 250ms
+      setIsRecording(true);
+      setRecordingSeconds(0);
+
+      timerRef.current = setInterval(() => {
+        setRecordingSeconds((s) => {
+          if (s + 1 >= MAX_RECORDING_SECONDS) {
+            stopRecording();
+            return s + 1;
+          }
+          return s + 1;
+        });
+      }, 1000);
+    } catch {
+      // User denied microphone or not supported — silently ignore
+    }
+  };
+
+  const stopRecording = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+    setRecordingSeconds(0);
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
   return (
     <div className="rounded-[20px] border border-white/8 bg-bg-surface transition-shadow duration-200 focus-within:border-brand-green/25 focus-within:shadow-green-sm">
       {/* Attachments */}
@@ -55,8 +144,17 @@ export function InputBox({
         </div>
       )}
 
+      {/* Recording indicator bar */}
+      {isRecording && (
+        <div className="flex items-center gap-2 border-b border-red-500/20 bg-red-500/5 px-4 py-2">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+          <span className="text-xs font-semibold text-red-400">Запись {formatTime(recordingSeconds)}</span>
+          <span className="ml-auto text-[10px] text-text-muted">макс. {formatTime(MAX_RECORDING_SECONDS)}</span>
+        </div>
+      )}
+
       {/* Input row */}
-      <div className="flex items-end gap-3 px-3 py-3">
+      <div className="flex items-end gap-2 px-3 py-3">
         {/* Attach button */}
         <label className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/8 bg-bg-elevated text-text-muted transition-all hover:border-brand-green/25 hover:text-brand-green">
           {uploading ? (
@@ -68,7 +166,7 @@ export function InputBox({
             type="file"
             multiple
             accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt"
-            disabled={disabled || uploading}
+            disabled={disabled || uploading || isRecording}
             onChange={(event) => {
               onFilesSelected(event.target.files);
               event.currentTarget.value = "";
@@ -77,12 +175,27 @@ export function InputBox({
           />
         </label>
 
+        {/* Audio record button */}
+        <button
+          type="button"
+          disabled={disabled || loading || uploading}
+          onClick={isRecording ? stopRecording : () => void startRecording()}
+          aria-label={isRecording ? "Остановить запись" : "Записать голосовое сообщение"}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all ${
+            isRecording
+              ? "border-red-500/40 bg-red-500/15 text-red-400 hover:bg-red-500/25"
+              : "border-white/8 bg-bg-elevated text-text-muted hover:border-brand-green/25 hover:text-brand-green"
+          } disabled:cursor-not-allowed disabled:opacity-40`}
+        >
+          {isRecording ? <StopCircle className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+        </button>
+
         {/* Textarea */}
         <textarea
           autoFocus
           rows={1}
           value={value}
-          disabled={disabled}
+          disabled={disabled || isRecording}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
@@ -90,14 +203,14 @@ export function InputBox({
               onSubmit();
             }
           }}
-          placeholder="Напишите ответ…"
+          placeholder={isRecording ? "Говорите — запись идёт…" : "Напишите ответ…"}
           className="min-h-[40px] max-h-36 flex-1 resize-none bg-transparent py-2.5 text-sm leading-relaxed text-white outline-none placeholder:text-text-muted disabled:opacity-50"
         />
 
         {/* Send button */}
         <button
           type="button"
-          disabled={disabled || loading || uploading || (!value.trim() && attachments.length === 0)}
+          disabled={disabled || loading || uploading || isRecording || (!value.trim() && attachments.length === 0)}
           onClick={onSubmit}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-green text-black transition-all hover:bg-brand-dim hover:shadow-green-sm active:scale-95 disabled:cursor-not-allowed disabled:opacity-35"
         >

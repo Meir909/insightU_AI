@@ -298,6 +298,98 @@ Provide analysis in JSON format:
 }
 
 /**
+ * Analyze document (PDF, docx, txt) using GPT-4o
+ */
+export async function analyzeDocument(
+  documentBuffer: Buffer,
+  mimeType: string,
+  filename: string,
+): Promise<{
+  transcript: string;
+  keyPoints: string[];
+  summary: string;
+  skills: string[];
+  evidenceStrength: number;
+}> {
+  // Extract text from buffer (works for plain text/txt; for PDF/docx we take what we can)
+  let rawText = "";
+  try {
+    rawText = documentBuffer.toString("utf-8");
+    // Strip binary garbage (non-printable chars outside CJK/Cyrillic/Latin range)
+    rawText = rawText.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]/g, " ").trim();
+  } catch {
+    rawText = "";
+  }
+
+  // Limit to first 4000 chars to stay within token budget
+  const textSlice = rawText.slice(0, 4000);
+
+  const fallback = {
+    transcript: textSlice || `Document "${filename}" uploaded.`,
+    keyPoints: ["Документ прикреплён кандидатом как evidence", "Содержимое ожидает ручной проверки комиссии"],
+    summary: `Документ "${filename}" загружен кандидатом.`,
+    skills: [],
+    evidenceStrength: 40,
+  };
+
+  if (!process.env.OPENAI_API_KEY || !textSlice) return fallback;
+
+  try {
+    const prompt = `You are analyzing a candidate's uploaded document for a leadership scholarship program.
+
+Document name: "${filename}"
+Document type: ${mimeType}
+Document content (first 4000 chars):
+"""
+${textSlice}
+"""
+
+Analyze this document and extract:
+1. A clean summary of what the document is about (1-2 sentences in Russian)
+2. Key points / evidence that support the candidate's application (3-5 points in Russian)
+3. Skills or competencies demonstrated or mentioned
+4. Evidence strength: 0-100 (how useful is this document as evidence for the application?)
+
+Respond ONLY with JSON:
+{
+  "summary": "<string in Russian>",
+  "keyPoints": ["<point 1>", "<point 2>", "<point 3>"],
+  "skills": ["<skill 1>", "<skill 2>"],
+  "evidenceStrength": <number 0-100>
+}`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+      max_tokens: 500,
+    });
+
+    const raw = response.choices[0].message.content;
+    if (!raw) return fallback;
+
+    const parsed = JSON.parse(raw) as {
+      summary?: string;
+      keyPoints?: string[];
+      skills?: string[];
+      evidenceStrength?: number;
+    };
+
+    return {
+      transcript: textSlice,
+      keyPoints: parsed.keyPoints ?? fallback.keyPoints,
+      summary: parsed.summary ?? fallback.summary,
+      skills: parsed.skills ?? [],
+      evidenceStrength: typeof parsed.evidenceStrength === "number" ? parsed.evidenceStrength : 50,
+    };
+  } catch (error) {
+    console.error("Document analysis error:", error);
+    return fallback;
+  }
+}
+
+/**
  * Quick voice message analysis (for chat interface)
  */
 export async function analyzeVoiceMessage(

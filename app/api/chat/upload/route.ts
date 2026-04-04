@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { getAuthSession } from "@/lib/server/auth";
 import { addSecurityHeaders } from "@/lib/server/security";
-import { analyzeAudio, analyzeVideo } from "@/lib/services/media-analysis";
+import { analyzeAudio, analyzeDocument, analyzeVideo } from "@/lib/services/media-analysis";
 import { uploadAudio, uploadDocument, uploadVideo } from "@/lib/services/s3";
 import {
   createArtifact,
@@ -57,11 +57,7 @@ export async function POST(request: NextRequest) {
         ? await analyzeAudio(bytes, mimeType)
         : kind === "video"
           ? await analyzeVideo(bytes, mimeType, "Candidate uploaded supporting video evidence.")
-          : {
-              transcript: await file.text().catch(() => ""),
-              keyPoints: ["Structured document uploaded", "Document linked to candidate session"],
-              summary: "Document uploaded and attached to the candidate interview session.",
-            };
+          : await analyzeDocument(bytes, mimeType, file.name);
 
     const analysisPayload = JSON.parse(JSON.stringify(analysis)) as Prisma.InputJsonValue;
 
