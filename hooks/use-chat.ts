@@ -46,26 +46,47 @@ export function useChat() {
     if (!files?.length) return;
     setUploading(true);
 
-    // Add optimistic placeholders immediately so user sees chips right away
     const fileArray = Array.from(files);
-    const placeholders: ChatAttachment[] = fileArray.map((file) => ({
-      id: `uploading-${crypto.randomUUID()}`,
-      kind: file.type.startsWith("audio/")
-        ? "audio"
-        : file.type.startsWith("video/")
-          ? "video"
-          : "document",
-      name: file.name,
-      mimeType: file.type,
-      sizeKb: Math.max(1, Math.round(file.size / 1024)),
-      status: "uploading" as const,
-    }));
+
+    // Build placeholders with local blob URL for instant preview
+    const placeholders: ChatAttachment[] = fileArray.map((file) => {
+      const localPreviewUrl = URL.createObjectURL(file);
+      // For audio: kick off duration read asynchronously
+      let localDurationSec: number | undefined;
+      if (file.type.startsWith("audio/")) {
+        const audio = new Audio(localPreviewUrl);
+        audio.addEventListener("loadedmetadata", () => {
+          setAttachments((current) =>
+            current.map((a) =>
+              a.localPreviewUrl === localPreviewUrl
+                ? { ...a, localDurationSec: audio.duration }
+                : a,
+            ),
+          );
+        });
+      }
+
+      return {
+        id: `uploading-${crypto.randomUUID()}`,
+        kind: file.type.startsWith("audio/")
+          ? ("audio" as const)
+          : file.type.startsWith("video/")
+            ? ("video" as const)
+            : ("document" as const),
+        name: file.name,
+        mimeType: file.type,
+        sizeKb: Math.max(1, Math.round(file.size / 1024)),
+        status: "uploading" as const,
+        localPreviewUrl,
+        localDurationSec,
+      };
+    });
+
     setAttachments((current) => [...current, ...placeholders]);
 
-    const uploaded: ChatAttachment[] = [];
     for (let i = 0; i < fileArray.length; i++) {
       const file = fileArray[i];
-      const placeholderId = placeholders[i].id;
+      const placeholder = placeholders[i];
 
       const formData = new FormData();
       formData.set("file", file);
@@ -78,14 +99,22 @@ export function useChat() {
       const data = await response.json();
       if (response.ok && data.attachment) {
         const ready = data.attachment as ChatAttachment;
-        // Replace placeholder with real attachment
+        // Carry the local preview URL into the ready attachment
         setAttachments((current) =>
-          current.map((a) => (a.id === placeholderId ? ready : a)),
+          current.map((a) =>
+            a.id === placeholder.id
+              ? {
+                  ...ready,
+                  localPreviewUrl: placeholder.localPreviewUrl,
+                  localDurationSec: a.localDurationSec ?? placeholder.localDurationSec,
+                }
+              : a,
+          ),
         );
-        uploaded.push(ready);
       } else {
-        // Remove failed placeholder
-        setAttachments((current) => current.filter((a) => a.id !== placeholderId));
+        // Revoke blob URL and remove failed placeholder
+        URL.revokeObjectURL(placeholder.localPreviewUrl ?? "");
+        setAttachments((current) => current.filter((a) => a.id !== placeholder.id));
       }
     }
 
@@ -93,7 +122,11 @@ export function useChat() {
   };
 
   const removeAttachment = (id: string) => {
-    setAttachments((current) => current.filter((item) => item.id !== id));
+    setAttachments((current) => {
+      const item = current.find((a) => a.id === id);
+      if (item?.localPreviewUrl) URL.revokeObjectURL(item.localPreviewUrl);
+      return current.filter((a) => a.id !== id);
+    });
   };
 
   const togglePause = () => setPaused((v) => !v);

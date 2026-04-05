@@ -105,6 +105,9 @@ export interface ChatAttachment {
   transcript?: string;
   extractedSignals?: string[];
   storagePath?: string;
+  // Client-only fields for local preview (never sent to server)
+  localPreviewUrl?: string;
+  localDurationSec?: number;
 }
 
 export interface ChatMessage {
