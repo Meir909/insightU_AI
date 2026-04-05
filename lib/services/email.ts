@@ -50,7 +50,7 @@ function welcomeTemplate(candidateName: string, candidateCode: string): EmailTem
         <p><a href="${APP_URL}/dashboard" style="background: #3182ce; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0;">Continue Your Application</a></p>
         
         <p style="color: #666; font-size: 14px; margin-top: 30px;">
-          If you have any questions, please contact us at support@invisionu.kz
+          If you have any questions, please contact us at nurmiko22@gmail.com
         </p>
       </div>
     `,
@@ -72,7 +72,7 @@ Next Steps:
 
 Continue Your Application: ${APP_URL}/dashboard
 
-If you have any questions, please contact us at support@invisionu.kz
+If you have any questions, please contact us at nurmiko22@gmail.com
     `,
   };
 }

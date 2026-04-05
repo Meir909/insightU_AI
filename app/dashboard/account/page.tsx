@@ -57,6 +57,24 @@ export default async function BackofficeAccountPage() {
           <p className="mt-3 text-3xl font-black text-white">{overview.pendingCases}</p>
         </div>
       </section>
+
+      <section className="rounded-2xl border border-brand-green/20 bg-brand-green/6 p-5">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-sm font-bold text-white">Техподдержка комиссии</p>
+            <p className="mt-1 text-sm leading-relaxed text-text-secondary">
+              Если нужен доступ, есть вопросы по голосованию, shortlist или audit trail, напишите в техподдержку с
+              рабочего email комиссии.
+            </p>
+          </div>
+          <a
+            href={`mailto:nurmiko22@gmail.com?subject=${encodeURIComponent(`Поддержка комиссии ${overview.account.email ?? overview.account.name}`)}`}
+            className="shrink-0 rounded-xl border border-brand-green/30 bg-brand-green/10 px-4 py-2 text-sm font-semibold text-brand-green transition hover:bg-brand-green/15"
+          >
+            Написать в поддержку
+          </a>
+        </div>
+      </section>
     </div>
   );
 }

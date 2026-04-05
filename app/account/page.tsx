@@ -377,6 +377,25 @@ export default async function CandidateAccountPage() {
           </div>
         </div>
 
+        <div className="rounded-2xl border border-brand-green/20 bg-brand-green/6 p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-sm font-bold text-white">Нужна техподдержка?</p>
+              <p className="mt-1 text-sm leading-relaxed text-text-secondary">
+                Напишите в поддержку, если нужно удалить данные, уточнить статус заявки или восстановить доступ.
+                Укажите email, телефон или код кандидата{" "}
+                <span className="font-mono text-brand-green">{overview.candidate.code}</span>.
+              </p>
+            </div>
+            <a
+              href={`mailto:nurmiko22@gmail.com?subject=${encodeURIComponent(`Поддержка кандидата ${overview.candidate.code}`)}`}
+              className="shrink-0 rounded-xl border border-brand-green/30 bg-brand-green/10 px-4 py-2 text-sm font-semibold text-brand-green transition hover:bg-brand-green/15"
+            >
+              Написать в поддержку
+            </a>
+          </div>
+        </div>
+
         {/* Footer note */}
         <p className="flex items-center justify-center gap-1.5 text-center text-xs text-text-muted">
           <Shield className="h-3 w-3" />

@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import { ShieldCheck, Sparkles } from "lucide-react";
 import { LoginEntry } from "@/components/auth/login-entry";
+import { ViewerEntryButton } from "@/components/auth/viewer-entry-button";
 import { SignInScene } from "@/components/sign-in/sign-in-scene";
 
 export default function SignInPage() {
@@ -56,6 +57,11 @@ export default function SignInPage() {
             </div>
           </div>
           <LoginEntry />
+          <ViewerEntryButton />
+          <p className="mt-4 text-xs leading-relaxed text-text-muted">
+            Поддержка: <span className="text-white">nurmiko22@gmail.com</span>. Для удаления данных или проверки
+            статуса заявки укажите email, телефон или код кандидата.
+          </p>
         </section>
       </div>
     </div>
