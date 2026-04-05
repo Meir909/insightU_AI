@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 import { enrichCandidate } from "@/lib/evaluation";
-import { MOCK_CANDIDATES } from "@/lib/mock-data";
+import { DEMO_CANDIDATES } from "@/lib/demo-candidates";
 import type {
   Candidate,
   ChatAttachment,
@@ -128,7 +128,7 @@ function buildPersistedCandidateView(
   session: PersistedEvaluationSession | undefined,
   votes: CommitteeVote[],
 ): Candidate {
-  const fallback = MOCK_CANDIDATES[0];
+  const fallback = DEMO_CANDIDATES[0];
   const score = session?.scoreUpdate;
   const artifacts = session?.artifacts ?? [];
   const committeeReview = computeCommitteeReview(votes);

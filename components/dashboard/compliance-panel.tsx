@@ -3,17 +3,17 @@ import { Eye, Shield, Users } from "lucide-react";
 const items = [
   {
     icon: Shield,
-    text: "ИИ не принимает окончательных решений о зачислении или отказе.",
+    text: "AI не принимает окончательных решений о зачислении или отказе.",
     badge: "Соблюдается",
   },
   {
     icon: Users,
-    text: "Для положительного решения нужны минимум 3 независимых одобрения комиссии.",
+    text: "Для положительного решения нужны независимые голоса комиссии и human review по спорным кейсам.",
     badge: "Соблюдается",
   },
   {
     icon: Eye,
-    text: "Каждая рекомендация ИИ проходит human review и сопровождается explainability.",
+    text: "Каждая рекомендация AI сопровождается explainability, audit trail и возможностью ручной проверки.",
     badge: "Соблюдается",
   },
 ];
@@ -36,7 +36,7 @@ export function CompliancePanel() {
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/8 bg-white/4">
               <Icon className="h-4 w-4 text-text-muted" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-sm leading-relaxed text-text-secondary">{text}</p>
             </div>
             <span className="ml-2 shrink-0 rounded-xl bg-brand-green/12 px-2.5 py-1 text-[10px] font-bold text-brand-green">

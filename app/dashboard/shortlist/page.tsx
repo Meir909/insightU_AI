@@ -1,11 +1,11 @@
-import { Download, ExternalLink, ShieldCheck, Sparkles, Users } from "lucide-react";
+﻿import { Download, ExternalLink, ShieldCheck, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getShortlist } from "@/lib/api";
 
 const DECISION_LABEL: Record<string, { label: string; color: string }> = {
   approved: { label: "Одобрен комиссией", color: "text-brand-green" },
-  rejected: { label: "Отклонён", color: "text-red-400" },
+  rejected: { label: "Отклонен", color: "text-red-400" },
   escalated: { label: "На эскалации", color: "text-yellow-400" },
   pending: { label: "Ожидает решения", color: "text-text-muted" },
 };
@@ -22,7 +22,7 @@ export default async function ShortlistPage() {
             <h2 className="mt-2 text-3xl font-black tracking-tight text-white">Кандидаты в шорт-листе</h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">
               Профили с лучшим балансом по аналитике, мотивации, росту и аутентичности. Рекомендации AI носят
-              вспомогательный характер — итоговое решение за комиссией.
+              вспомогательный характер, итоговое решение остается за комиссией.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -78,7 +78,7 @@ export default async function ShortlistPage() {
                   </span>
                   <p className="font-mono text-xs text-brand-green">{candidate.code}</p>
                   <h3 className="mt-1 text-xl font-black tracking-tight text-white">{candidate.name || candidate.code}</h3>
-                  <p className="mt-0.5 text-sm text-text-secondary">{candidate.city} · {candidate.program}</p>
+                  <p className="mt-0.5 text-sm text-text-secondary">{candidate.city} В· {candidate.program}</p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <StatusBadge status={candidate.status} />
@@ -118,7 +118,7 @@ export default async function ShortlistPage() {
                 <div className="mb-4 rounded-2xl border border-brand-green/15 bg-brand-green/6 p-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand-green">Ключевая цитата</p>
                   <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-text-secondary">
-                    «{candidate.key_quotes[0]}»
+                    &laquo;{candidate.key_quotes[0]}&raquo;
                   </p>
                 </div>
               )}

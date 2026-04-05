@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowUpDown, ChevronLeft, ChevronRight, Filter, Search, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Candidate } from "@/lib/types";
@@ -72,7 +72,7 @@ export function CandidateTable({ candidates, loading = false }: { candidates: Ca
     });
 
     return list.sort((a, b) => (sortDesc ? b.final_score - a.final_score : a.final_score - b.final_score));
-  }, [candidates, debouncedSearch, sortDesc]);
+  }, [candidates, debouncedSearch, sortDesc, statusFilter]);
 
   // Reset to page 1 on filter/sort change
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));

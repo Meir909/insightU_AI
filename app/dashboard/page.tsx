@@ -19,8 +19,8 @@ export default async function DashboardPage() {
           <div>
             <h2 className="text-3xl font-black tracking-tight text-white">Комиссионная панель отбора</h2>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">
-              Комиссия видит общий пул кандидатов, аргументированную оценку модели и принимает итоговое решение без
-              лишнего визуального шума.
+              Комиссия видит общий пул кандидатов, объяснимые сигналы модели и принимает итоговое решение
+              без лишнего визуального шума.
             </p>
           </div>
         </div>
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KPICard title="Кандидатов в системе" value={candidates.length} icon={<Users className="h-4 w-4" />} highlight />
         <KPICard title="Средний score" value={avgScore} decimals={1} icon={<TrendingUp className="h-4 w-4" />} change={6} index={1} />
-        <KPICard title="Шорт-лист" value={shortlisted} icon={<Star className="h-4 w-4" />} change={11} index={2} />
+        <KPICard title="Шортлист" value={shortlisted} icon={<Star className="h-4 w-4" />} change={11} index={2} />
         <KPICard title="На ручную проверку" value={flagged} icon={<AlertTriangle className="h-4 w-4" />} change={-2} index={3} />
       </section>
 

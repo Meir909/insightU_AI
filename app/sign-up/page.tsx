@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { ShieldCheck, Sparkles } from "lucide-react";
 import { RegisterEntry } from "@/components/auth/register-entry";
 import { SignInScene } from "@/components/sign-in/sign-in-scene";
@@ -16,14 +16,16 @@ export default function SignUpPage() {
           </div>
 
           <div className="max-w-3xl space-y-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-text-muted">Регистрация · inVision U</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-text-muted">
+              Регистрация · inVision U
+            </p>
             <h1 className="text-5xl font-black leading-[0.94] tracking-[-0.05em] text-white md:text-7xl">
               Создание
-              <span className="block text-brand-green">защищённого аккаунта</span>
+              <span className="block text-brand-green">защищенного аккаунта</span>
             </h1>
             <p className="max-w-2xl text-base leading-relaxed text-text-secondary md:text-lg">
-              После регистрации кандидат получает личный кабинет и interview-сессию. У комиссии отдельный кабинет,
-              доступный только после role-based проверки и доступа по внутреннему ключу.
+              После регистрации кандидат получает личный кабинет и доступ к AI-интервью. Для комиссии
+              создается отдельный контур с ролью, прозрачной логикой доступа и журналированием решений.
             </p>
           </div>
 
@@ -48,8 +50,8 @@ export default function SignUpPage() {
             <div className="space-y-1">
               <p className="text-lg font-black tracking-tight text-white">Официальная регистрация</p>
               <p className="text-sm leading-relaxed text-text-muted">
-                Создайте отдельный аккаунт кандидата или комиссии. Политика конфиденциальности и условия использования
-                доступны перед регистрацией и подтверждаются явно.
+                Создайте отдельный аккаунт кандидата или комиссии. Политика конфиденциальности и условия
+                использования доступны до регистрации и подтверждаются явно.
               </p>
             </div>
           </div>

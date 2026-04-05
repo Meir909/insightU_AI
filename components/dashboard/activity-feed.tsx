@@ -1,10 +1,10 @@
-import { MOCK_CANDIDATES } from "@/lib/mock-data";
+﻿import { DEMO_CANDIDATES } from "@/lib/demo-candidates";
 
 const events = [
-  "Скоринг профиля IU-2414 обновлён после follow-up интервью",
-  "В шорт-лист добавлен кандидат из Семея",
-  "3 профиля помечены на ручную проверку из-за low confidence",
-  "AI-detector завершил пересчёт по последним эссе",
+  "Скоринг профиля IU-2602 обновлен после follow-up интервью.",
+  "В шорт-лист добавлен кандидат с подтвержденными артефактами и тремя голосами комиссии.",
+  "Три профиля отправлены на ручную проверку из-за низкой уверенности и конфликтующих сигналов.",
+  "Multimodal review пересчитал вклад видео и документов в explainability summary.",
 ];
 
 export function ActivityFeed() {
@@ -12,12 +12,10 @@ export function ActivityFeed() {
     <div className="rounded-[28px] border border-white/6 bg-bg-surface p-5">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">
-            Activity
-          </p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Activity</p>
           <h3 className="mt-1 text-lg font-bold text-white">Живая лента системы</h3>
         </div>
-        <p className="font-mono text-xs text-brand-green">{MOCK_CANDIDATES.length} profiles</p>
+        <p className="font-mono text-xs text-brand-green">{DEMO_CANDIDATES.length} profiles</p>
       </div>
       <div className="space-y-3">
         {events.map((event, index) => (

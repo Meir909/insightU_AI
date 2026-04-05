@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Activity, AlertTriangle, Clock, Cpu, FileText, Film, Mic, ShieldCheck, Users } from "lucide-react";
 import Link from "next/link";
@@ -23,7 +23,7 @@ type CandidateDetailShellProps = {
 const VOTE_LABEL: Record<string, string> = {
   approve: "Одобрить",
   reject: "Отклонить",
-  hold: "На удержание",
+  hold: "На удержании",
 };
 
 const ARTIFACT_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -81,7 +81,7 @@ export function CandidateDetailShell({
         ← Назад к пулу кандидатов
       </Link>
 
-      {/* ── SUMMARY BANNER ─────────────────────────────── */}
+      {/* в”Ђв”Ђ SUMMARY BANNER в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
       <div className="rounded-[24px] border border-white/8 bg-bg-surface p-5">
         <div className="flex flex-wrap items-start gap-5">
           {/* Score bubble */}
@@ -99,7 +99,7 @@ export function CandidateDetailShell({
               <span className="font-mono text-sm text-brand-green">{candidate.code}</span>
               <StatusBadge status={candidate.status} />
             </div>
-            <p className="mt-1 text-sm text-text-secondary">{candidate.city} · {candidate.program}</p>
+            <p className="mt-1 text-sm text-text-secondary">{candidate.city} В· {candidate.program}</p>
 
             {/* AI recommendation */}
             <div className={`mt-3 inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold ${recommendationColor}`}>
@@ -157,7 +157,7 @@ export function CandidateDetailShell({
               <div className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-bg-elevated px-3 py-1.5">
                 <Activity className="h-3 w-3 text-text-muted" />
                 <span className="font-mono text-[10px] text-text-muted">
-                  {candidate.evaluation_session_id.slice(0, 8)}…
+                  {candidate.evaluation_session_id.slice(0, 8)}...
                 </span>
               </div>
             )}
@@ -166,7 +166,7 @@ export function CandidateDetailShell({
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-green opacity-60" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-green" />
               </span>
-              <span className="text-[11px] font-semibold text-brand-green">AI оценка активна</span>
+              <span className="text-[11px] font-semibold text-brand-green">AI-оценка активна</span>
             </div>
           </div>
         </div>
@@ -192,7 +192,7 @@ export function CandidateDetailShell({
         )}
       </div>
 
-      {/* ── TABS + CONTENT ─────────────────────────────── */}
+      {/* в”Ђв”Ђ TABS + CONTENT в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */}
       <CandidateTabs>
         {(tab) => (
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">

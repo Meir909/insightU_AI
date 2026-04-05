@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useRef, useState } from "react";
 import { BarChart3, FileText, ShieldCheck, User } from "lucide-react";
@@ -32,7 +32,6 @@ export function CandidateTabs({ children }: { children: (tab: Tab) => React.Reac
 
   return (
     <>
-      {/* Mobile tab bar — hidden on xl */}
       <div className="sticky top-0 z-20 -mx-4 bg-bg-base/95 px-4 py-3 backdrop-blur-sm xl:hidden">
         <div
           role="tablist"
@@ -42,7 +41,9 @@ export function CandidateTabs({ children }: { children: (tab: Tab) => React.Reac
           {tabs.map(({ key, label, icon: Icon }, idx) => (
             <button
               key={key}
-              ref={(el) => { tabRefs.current[idx] = el; }}
+              ref={(el) => {
+                tabRefs.current[idx] = el;
+              }}
               role="tab"
               id={`tab-${key}`}
               aria-selected={activeTab === key}

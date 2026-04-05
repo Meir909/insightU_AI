@@ -1,4 +1,4 @@
-import { AnalyticsView } from "@/components/dashboard/analytics-view";
+﻿import { AnalyticsView } from "@/components/dashboard/analytics-view";
 import { PredictivePanel } from "@/components/dashboard/predictive-panel";
 import { getFairnessSummary, getRanking } from "@/lib/api";
 import { generatePredictiveInsights } from "@/lib/services/predictive-analytics";
@@ -12,7 +12,7 @@ export default async function AnalyticsPage() {
       : 0;
 
   const dimensionData = [
-    { label: "Когнитивный", value: average("cognitive") },
+    { label: "Когнитивность", value: average("cognitive") },
     { label: "Лидерство", value: average("leadership") },
     { label: "Рост", value: average("growth") },
     { label: "Решения", value: average("decision") },

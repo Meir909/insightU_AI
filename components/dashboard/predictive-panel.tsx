@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
@@ -41,7 +41,7 @@ export function PredictivePanel({ insights }: Props) {
             <p className="text-[10px] font-semibold text-text-muted">Требуют внимания</p>
           </div>
           <p className="mt-2 text-2xl font-black text-white">{insights.atRiskCount}</p>
-          <p className="mt-0.5 text-[10px] text-text-muted">с риск-флагами</p>
+          <p className="mt-0.5 text-[10px] text-text-muted">с risk-флагами</p>
         </div>
 
         <div className="rounded-2xl border border-white/6 bg-bg-elevated p-4">
@@ -57,7 +57,7 @@ export function PredictivePanel({ insights }: Props) {
                 : "text-white"
           }`}>
             {insights.cohortQualityTrend === "improving"
-              ? "Растёт"
+              ? "Растет"
               : insights.cohortQualityTrend === "declining"
                 ? "Снижается"
                 : "Стабильно"}
