@@ -166,6 +166,7 @@ export async function appendUserMessage(
       goals: session.candidateGoals,
       experience: session.candidateExperience,
     },
+    allArtifacts,
   );
 
   await addInterviewMessage({

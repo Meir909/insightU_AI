@@ -1,5 +1,5 @@
 import { redactPIIText } from "@/lib/server/security";
-import type { ChatMessage } from "@/lib/types";
+import type { ChatAttachment, ChatMessage } from "@/lib/types";
 
 export interface CandidateProfile {
   name?: string;
@@ -17,30 +17,66 @@ const BASE_QUESTIONS = [
   "Кейс: в вашей школе или сообществе низкая вовлечённость в общественные проекты. Что вы сделаете за ближайшие 3 месяца?",
 ];
 
-async function askOpenAI(history: ChatMessage[], profile?: CandidateProfile): Promise<string | null> {
+// ── Build a readable artifact context block for GPT ────────────────────────
+function buildArtifactContext(artifacts: ChatAttachment[]): string {
+  if (!artifacts.length) return "";
+
+  const lines: string[] = ["SUBMITTED EVIDENCE (files the candidate has attached):"];
+
+  for (const a of artifacts) {
+    const kindLabel =
+      a.kind === "audio" ? "Voice memo"
+      : a.kind === "video" ? "Video"
+      : a.mimeType?.startsWith("image/") ? "Photo/image"
+      : "Document";
+
+    lines.push(`\n[${kindLabel}] "${a.name}"`);
+
+    if (a.transcript) {
+      // Trim to 600 chars to stay within token budget
+      const trimmed = a.transcript.slice(0, 600);
+      lines.push(`  Transcript/content: ${trimmed}${a.transcript.length > 600 ? "…" : ""}`);
+    }
+
+    if (a.extractedSignals?.length) {
+      lines.push(`  Key signals: ${a.extractedSignals.slice(0, 6).join(", ")}`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
+async function askOpenAI(
+  history: ChatMessage[],
+  profile?: CandidateProfile,
+  artifacts: ChatAttachment[] = [],
+): Promise<string | null> {
   if (!process.env.OPENAI_API_KEY) return null;
 
   const transcript = history
-    .map((message) => `${message.role === "assistant" ? "INTERVIEWER" : "CANDIDATE"}: ${redactPIIText(message.content)}`)
+    .map((m) => `${m.role === "assistant" ? "INTERVIEWER" : "CANDIDATE"}: ${redactPIIText(m.content)}`)
     .join("\n");
 
   const profileContext = profile
-    ? `
-Candidate profile:
+    ? `Candidate profile:
 - Name: ${profile.name || "Unknown"}
 - City: ${profile.city || "Unknown"}
 - Program applied to: ${profile.program || "inVision U"}
 - Stated goals: ${profile.goals || "Not provided"}
-- Background/experience: ${profile.experience || "Not provided"}
-`.trim()
+- Background/experience: ${profile.experience || "Not provided"}`.trim()
     : "";
+
+  const artifactContext = buildArtifactContext(artifacts);
 
   const prompt = `You are an expert AI admissions interviewer for inVision U — a selective leadership program in Kazakhstan.
 
 ${profileContext}
+${artifactContext ? `\n${artifactContext}\n` : ""}
+Your role: Ask ONE focused follow-up question based on the candidate's previous answers${artifacts.length ? " AND the evidence they have submitted (files above)" : ""}.
 
-Your role: Ask ONE focused follow-up question based on the candidate's previous answers.
-- Dig deeper into what they actually said — reference specific details from their responses
+Rules:
+- Dig deeper into what they actually said — reference specific details from their responses or uploaded files
+- If they submitted a document, voice memo, or video: reference its content explicitly (e.g. "В вашем голосовом сообщении вы упомянули X — расскажите подробнее…" or "В документе, который вы прикрепили, говорится о Y — как это связано с вашими целями?")
 - Focus on: leadership potential, genuine motivation, growth mindset, decision-making quality
 - If their answer was vague, probe for specifics (names, dates, results)
 - If their answer was strong, explore the "why" or challenge their thinking
@@ -62,7 +98,7 @@ Ask the next question only. No preamble.`;
     body: JSON.stringify({
       model: "gpt-4o",
       temperature: 0.7,
-      max_tokens: 150,
+      max_tokens: 180,
       messages: [{ role: "user", content: prompt }],
     }),
   });
@@ -78,26 +114,26 @@ Ask the next question only. No preamble.`;
 const PROGRESS_MILESTONES = [8, 18, 30, 44, 58, 73, 88, 100];
 
 function calcProgress(answeredCount: number): number {
-  // answeredCount: how many answers the user has given (1-based when called after appending)
   const idx = Math.min(answeredCount, PROGRESS_MILESTONES.length - 1);
   return PROGRESS_MILESTONES[idx];
 }
 
-export async function getAssistantReply(history: ChatMessage[], profile?: CandidateProfile) {
-  const userMessages = history.filter((message) => message.role === "user");
+export async function getAssistantReply(
+  history: ChatMessage[],
+  profile?: CandidateProfile,
+  artifacts: ChatAttachment[] = [],
+) {
+  const userMessages = history.filter((m) => m.role === "user");
   const count = userMessages.length;
 
-  // Questions 1–5: structured base (personalized via GPT if profile available)
+  // Questions 1–5: structured base (personalized via GPT if profile or artifacts available)
   if (count < BASE_QUESTIONS.length) {
-    // For first 5 questions: try GPT personalization if we have profile and >0 answers
-    if (count > 0 && profile?.goals) {
-      const adaptive = await askOpenAI(history, profile);
+    // Use GPT to personalize if we have profile goals OR any artifacts submitted
+    const hasContext = (count > 0 && profile?.goals) || artifacts.length > 0;
+    if (hasContext) {
+      const adaptive = await askOpenAI(history, profile, artifacts);
       if (adaptive) {
-        return {
-          reply: adaptive,
-          progress: calcProgress(count),
-          completed: false,
-        };
+        return { reply: adaptive, progress: calcProgress(count), completed: false };
       }
     }
     return {
@@ -107,18 +143,14 @@ export async function getAssistantReply(history: ChatMessage[], profile?: Candid
     };
   }
 
-  // Questions 6–7: fully adaptive GPT follow-up
+  // Questions 6–7: fully adaptive GPT follow-up (always uses artifacts)
   if (count < 7) {
     const fallbacks = [
       "Что в вашем прошлом опыте показывает не только результат, но и траекторию роста?",
       "Если бы ваш проект провалился завтра, что именно вы бы пересмотрели в первую очередь и почему?",
     ];
-    const adaptive = (await askOpenAI(history, profile)) || fallbacks[count - 5];
-    return {
-      reply: adaptive,
-      progress: calcProgress(count),
-      completed: false,
-    };
+    const adaptive = (await askOpenAI(history, profile, artifacts)) || fallbacks[count - 5];
+    return { reply: adaptive, progress: calcProgress(count), completed: false };
   }
 
   // Completion
