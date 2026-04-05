@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import { ShieldCheck, Sparkles } from "lucide-react";
 import { RegisterEntry } from "@/components/auth/register-entry";
+import { ViewerEntryButton } from "@/components/auth/viewer-entry-button";
 import { SignInScene } from "@/components/sign-in/sign-in-scene";
 
 export default function SignUpPage() {
@@ -56,6 +57,7 @@ export default function SignUpPage() {
             </div>
           </div>
           <RegisterEntry />
+          <ViewerEntryButton />
         </section>
       </div>
     </div>
